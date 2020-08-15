@@ -19,16 +19,19 @@ let s:ph = '$' . 'PLACEHOLDER'
 ""
 fun! docgen#box(bang) abort
   " {{{1
-  let lines = s:boxed([''], a:bang, s:comment()[1])
-  -1put =lines
-  normal! `[=`]
+  let lines = s:create_box(s:replace_comment(), a:bang, trim(s:comment()[1]))
+  silent -1put =lines
+  silent keepjumps normal! `[=`]
   let i = line('.')
   for l in lines
     call setline(i, getline(i)[:&tw-1])
     let i += 1
   endfor
   normal! `[j
-  call feedkeys('A ', 'n')
+  " could be a converted comment
+  if getline('.') !~ '\w'
+    call feedkeys('A ', 'n')
+  endif
 endfun "}}}
 
 
@@ -77,7 +80,7 @@ fun! docgen#func(bang, count) abort
   let lines = s:preserve_oldlines( lines, s:previous_lines(startLn) )
 
   " align placeholders and create box
-  let lines = s:boxed( s:align(lines, doc.funcName), doc.get_boxed() )
+  let lines = s:create_box( s:align(lines, doc.funcName), doc.get_boxed() )
 
   call append(line('.') - 1, lines)
 
@@ -446,6 +449,10 @@ endfun "}}}
 " Helpers
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+fun! s:is_comment(line) abort
+  return synIDattr(synID(a:line, indent(a:line) + 1, 1), "name") =~? 'comment'
+endfun
+
 fun! s:bdoc()
   " {{{1
   return get(b:, 'docgen', {})
@@ -522,7 +529,33 @@ fun! s:align(lines, name) abort
   return a:lines
 endfun "}}}
 
-fun! s:boxed(lines, boxed, ...) abort
+fun! s:replace_comment() abort
+  let startLn = 0
+  if s:is_comment(line('.'))
+    let [startLn, endLn] = [line('.'), line('.')]
+    while s:is_comment(startLn - 1)
+      let startLn -= 1
+    endwhile
+    while s:is_comment(endLn + 1)
+      let endLn += 1
+    endwhile
+    let lines = getline(startLn, endLn)
+    " strip the previous comment chars
+    call map(lines, 'substitute(v:val, "^\\s*[[:punct:]]\\+\\s*", "", "")' )
+    if empty(lines[0])
+      call remove(lines, 0)
+    endif
+    if empty(lines[-1])
+      call remove(lines, -1)
+    endif
+    exe startLn . ',' . endLn . 'd _'
+  else
+    let lines = ['']
+  endif
+  return lines
+endfun
+
+fun! s:create_box(lines, boxed, ...) abort
   " {{{1
   let [a, m, b] = s:comment()
   let rchar = a:0 ? a:1 : a == '/*' ? '*' : '='
