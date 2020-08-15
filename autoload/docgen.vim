@@ -70,13 +70,13 @@ fun! docgen#func(bang, count) abort
   let doc.lines.return = doc.retLines()
   let doc.lines.desc = doc.descLines()
 
-  let lines = doc.lines.desc + doc.lines.params + doc.lines.return
+  let lines = doc.lines.desc + s:align(doc.lines.params) + doc.lines.return
 
   " keep the old lines of the previous docstring, if unchanged
   let lines = s:preserve_oldlines( lines, s:previous_docstring(startLn, doc.get_putBelow()) )
 
   " align placeholders and create box
-  let lines = s:create_box( s:align(lines, doc.funcName), doc.get_boxed(), doc.get_frameChar() )
+  let lines = s:create_box( lines, doc.get_boxed(), doc.get_frameChar() )
 
   exe 'silent ' ( doc.get_putBelow() ? '' : '-1' ) . 'put =lines'
   call s:reindent_box(lines, doc.get_frameChar())
@@ -423,7 +423,7 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:python = {
-      \ 'parsers': ['^%s%s%s%s:'],
+      \ 'parsers': ['^\s*%s%s%s%s:'],
       \ 'prePat': '\(class\|def\)\s*',
       \ 'putBelow': 1,
       \ 'jollyChar': ':',
@@ -589,14 +589,22 @@ fun! s:previous_docstring(start, below) abort
   return reverse(filter(lines, 'v:val =~ "\\k"'))
 endfun "}}}
 
-fun! s:align(lines, name) abort
+""
+" Function: s:align
+" Align placeholders in the given line.
+"
+" @param lines: the lines to align
+" @param ...:   an optional pattern, if found the line is kept as it is
+" @return:      the aligned lines
+""
+fun! s:align(lines, ...) abort
   " {{{1
-  let maxlen = max(map(copy(a:lines), 'strlen(v:val =~ a:name ? "" : v:val)'))
+  let maxlen = max(map(copy(a:lines), 'strlen(a:0 && v:val =~ a:1 ? "" : v:val)'))
   if maxlen > 50 " don't align if lines are too long
     return a:lines
   endif
   for l in range(len(a:lines))
-    if a:lines[l] =~ '\V' . a:name
+    if a:0 && a:lines[l] =~ '\V' . a:1
       continue
     elseif a:lines[l] =~ '\V' . s:ph
       let spaces = repeat(' ', maxlen - strlen(a:lines[l]))
