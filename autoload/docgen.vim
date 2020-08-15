@@ -99,7 +99,7 @@ endfun "}}}
 
 fun! s:new() abort
   "{{{1
-  let doc = extend(copy(s:Doc), s:{&filetype})
+  let doc = extend(deepcopy(s:Doc), s:{&filetype})
   let doc.style = s:Style
   let doc.frameChar = s:comment()[3]
   return doc
@@ -131,8 +131,8 @@ let s:Doc.putBelow  = 0
 
 fun! s:get(what, doc)
   "{{{1
-  let val = get(s:bdoc(), a:what, get(s:{&filetype}, a:what, a:doc[a:what]))
-  return type(val) == v:t_func ? val() : val
+  let a:doc[a:what] = get(s:bdoc(), a:what, get(s:{&filetype}, a:what, a:doc[a:what]))
+  return type(a:doc[a:what]) == v:t_func ? a:doc[a:what]() : a:doc[a:what]
 endfun "}}}
 
 fun! s:Doc.get_parsers() "{{{1
