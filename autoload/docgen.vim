@@ -19,14 +19,10 @@ let s:ph = '$' . 'PLACEHOLDER'
 ""
 fun! docgen#box(bang) abort
   " {{{1
-  let lines = s:create_box(s:replace_comment(), a:bang, trim(s:comment()[1]))
+  let lines = s:create_box(s:replace_comment(), a:bang)
   silent -1put =lines
-  silent keepjumps normal! `[=`]
-  let i = line('.')
-  for l in lines
-    call setline(i, getline(i)[:&tw-1])
-    let i += 1
-  endfor
+
+  call s:reindent_box(lines, s:comment()[3])
   normal! `[j
   " could be a converted comment
   if getline('.') !~ '\w'
@@ -80,9 +76,10 @@ fun! docgen#func(bang, count) abort
   let lines = s:preserve_oldlines( lines, s:previous_lines(startLn) )
 
   " align placeholders and create box
-  let lines = s:create_box( s:align(lines, doc.funcName), doc.get_boxed() )
+  let lines = s:create_box( s:align(lines, doc.funcName), doc.get_boxed(), doc.get_frameChar() )
 
-  call append(line('.') - 1, lines)
+  silent -1put =lines
+  call s:reindent_box(lines, doc.get_frameChar())
 
   " edit first placeholder, or go back to starting line if none is found
   normal! {
@@ -104,6 +101,7 @@ fun! s:new() abort
   "{{{1
   let doc = extend(copy(s:Doc), s:{&filetype})
   let doc.style = s:Style
+  let doc.frameChar = s:comment()[3]
   return doc
 endfun "}}}
 
@@ -166,6 +164,10 @@ endfun
 
 fun! s:Doc.get_postPat() "{{{1
   return s:get('postPat', self)
+endfun
+
+fun! s:Doc.get_frameChar() "{{{1
+  return s:get('frameChar', self)
 endfun
 
 fun! s:Doc.get_boxed() "{{{1
@@ -355,6 +357,7 @@ endfun "}}}
 
 let s:vim = {
       \ 'parsers': ['^fu\k*!\?\s%s%s%s%s'],
+      \ 'frameChar': '=',
       \}
 
 "{{{1
@@ -458,11 +461,20 @@ fun! s:bdoc()
   return get(b:, 'docgen', {})
 endfun "}}}
 
+""
+" Function: s:comment
+"
+" @return: a list with four elements:
+"          [0]  the opening multiline comment chars
+"          [1]  the chars for lines in between
+"          [2]  the closing multiline comment chars
+"          [3]  a single char used for box frame
+""
 fun! s:comment()
   " {{{1
   let cm = &commentstring =~ '//\s*%s' ? '/*%s*/' : &commentstring
   let c = substitute(split(&commentstring, '%s')[0], '\s*$', '', '')
-  return cm == '/*%s*/' ? ['/*', ' *', ' */'] : [c, c, c]
+  return cm == '/*%s*/' ? ['/*', ' *', ' */', '*'] : [c, c, c, trim(c)[:0]]
 endfun "}}}
 
 fun! s:preserve_oldlines(lines, oldlines) abort
@@ -557,13 +569,14 @@ endfun
 
 fun! s:create_box(lines, boxed, ...) abort
   " {{{1
-  let [a, m, b] = s:comment()
-  let rchar = a:0 ? a:1 : a == '/*' ? '*' : '='
+  let [a, m, b, M] = s:comment()
+  let rchar = a:0 ? a:1 : M
+  let rwidth = &tw ? &tw : 79
   if a:boxed && a != b
-    let box1 = a . repeat(rchar, &tw - strlen(a))
-    let box2 = ' ' . repeat(rchar, &tw - strlen(a)) . trim(b)
+    let box1 = a . repeat(rchar, rwidth - strlen(a))
+    let box2 = ' ' . repeat(rchar, rwidth - strlen(a) - 1) . trim(b)
   elseif a:boxed
-    let box1 = m . repeat(rchar, &tw - strlen(a))
+    let box1 = m . repeat(rchar, rwidth - strlen(a))
     let box2 = box1
   else
     let box1 = a . trim(m)
@@ -572,6 +585,22 @@ fun! s:create_box(lines, boxed, ...) abort
   call map(a:lines, 'v:val == "" || v:val == m ?'.
         \ '(v:val . m) : (m . " " . v:val)')
   return [box1] + a:lines + [box2]
+endfun "}}}
+
+fun! s:reindent_box(lines, frameChar) abort
+  "{{{1
+  silent keepjumps normal! `[=`]
+
+  let i = line('.')
+  for l in a:lines
+    let [line, maxw] = [getline(i), &tw ? &tw : 79]
+    if strlen(line) > maxw
+      let removeChars = printf('\V%s\{%s}', a:frameChar, strlen(line) - maxw)
+      let line = substitute(getline(i), removeChars, '', '')
+    endif
+    call setline(i, line)
+    let i += 1
+  endfor
 endfun "}}}
 
 " vim: et sw=2 ts=2 sts=2 fdm=marker tags=tags
