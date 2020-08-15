@@ -73,12 +73,12 @@ fun! docgen#func(bang, count) abort
   let lines = doc.lines.desc + doc.lines.params + doc.lines.return
 
   " keep the old lines of the previous docstring, if unchanged
-  let lines = s:preserve_oldlines( lines, s:previous_lines(startLn) )
+  let lines = s:preserve_oldlines( lines, s:previous_docstring(startLn, doc.get_putBelow()) )
 
   " align placeholders and create box
   let lines = s:create_box( s:align(lines, doc.funcName), doc.get_boxed(), doc.get_frameChar() )
 
-  silent -1put =lines
+  exe 'silent ' ( doc.get_putBelow() ? '' : '-1' ) . 'put =lines'
   call s:reindent_box(lines, doc.get_frameChar())
 
   " edit first placeholder, or go back to starting line if none is found
@@ -120,6 +120,7 @@ let s:Doc.postPat   = '\s*\(.*\)\?'
 
 let s:Doc.boxed     = 0
 let s:Doc.minimal   = 0
+let s:Doc.putBelow  = 0
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -172,6 +173,10 @@ endfun
 
 fun! s:Doc.get_frameChar() "{{{1
   return s:get('frameChar', self)
+endfun
+
+fun! s:Doc.get_putBelow() "{{{1
+  return s:get('putBelow', self)
 endfun
 
 fun! s:Doc.get_boxed() "{{{1
@@ -414,7 +419,8 @@ endfun "}}}
 
 let s:python = {
       \ 'parsers': ['^%s%s%s%s:'],
-      \ 'prePat': '\(class\|def\)\s*'
+      \ 'prePat': '\(class\|def\)\s*',
+      \ 'putBelow': 1,
       \}
 
 "{{{1
@@ -533,27 +539,41 @@ fun! s:preserve_oldlines(lines, oldlines) abort
 endfun "}}}
 
 ""
-" Function: s:previous_lines
+" Function: s:previous_docstring
 "
 " @param start: start line
 " @return: the lines in the docstring before update
 ""
-fun! s:previous_lines(start) abort
+fun! s:previous_docstring(start, below) abort
   " {{{1
   let lines = []
   let start = a:start
   let c = s:comment()[1]
-  while 1
-    if start == 1
-      break
-    elseif match(getline(start - 1), '^\V' . c) == 0
-      call add(lines, getline(start - 1))
-      exe (start - 1) . 'd _'
-      let start -= 1
-    else
-      break
-    endif
-  endwhile
+  if !a:below
+    while 1
+      if start == 1
+        break
+      elseif match(getline(start - 1), '^\V' . c) == 0
+        call add(lines, getline(start - 1))
+        exe (start - 1) . 'd _'
+        let start -= 1
+      else
+        break
+      endif
+    endwhile
+  else
+    while 1
+      if start == line('$')
+        break
+      elseif match(getline(start + 1), '^\V' . c) == 0
+        call add(lines, getline(start + 1))
+        exe (start + 1) . 'd _'
+        let start += 1
+      else
+        break
+      endif
+    endwhile
+  endif
   call map(lines, 'substitute(v:val, "^\\V" . c . " ", "", "")')
   return reverse(filter(lines, 'v:val =~ "\\k"'))
 endfun "}}}
