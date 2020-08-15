@@ -1,6 +1,6 @@
 " VARIABLES {{{1
 
-let s:supported = ['vim', 'lua', 'python', 'sh', 'java', 'ruby', 'go']
+let s:supported = ['vim', 'lua', 'python', 'sh', 'java', 'ruby', 'go', 'c', 'cpp']
 
 let s:ph = '$' . 'PLACEHOLDER'
 
@@ -42,6 +42,11 @@ fun! docgen#func(bang, count) abort
   let ft = split(&filetype, '\.')[0]
   if index(s:supported, ft) < 0 && !exists('b:docgen')
     echo '[docgen] not supported'
+    return
+  endif
+
+  if ft == 'c' || ft == 'cpp'
+    call doxygen#comment_func()
     return
   endif
 
