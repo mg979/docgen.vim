@@ -533,7 +533,9 @@ fun! s:align(lines, name) abort
     return a:lines
   endif
   for l in range(len(a:lines))
-    if a:lines[l] =~ '\V' . s:ph
+    if a:lines[l] =~ '\V' . a:name
+      continue
+    elseif a:lines[l] =~ '\V' . s:ph
       let spaces = repeat(' ', maxlen - strlen(a:lines[l]))
       let a:lines[l] = substitute(a:lines[l], '\V' . s:ph, spaces . s:ph, '')
     endif
