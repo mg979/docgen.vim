@@ -109,8 +109,8 @@ let s:Doc = {'lines': {}}
 
 " default formatters for docstring lines
 let s:Doc.funcFmt   = ['%s:' . s:ph, '']
-let s:Doc.paramsFmt = ["@param %s: " . s:ph]
-let s:Doc.retFmt    = ['@return: ' . s:ph]
+let s:Doc.paramsFmt = ['param %s: ' . s:ph]
+let s:Doc.retFmt    = ['return: ' . s:ph]
 
 " default patterns for function name, parameters, pre and post
 let s:Doc.prePat    = '\(\)'
@@ -121,6 +121,7 @@ let s:Doc.postPat   = '\s*\(.*\)\?'
 let s:Doc.boxed     = 0
 let s:Doc.minimal   = 0
 let s:Doc.putBelow  = 0
+let s:Doc.jollyChar = '@'
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -144,7 +145,7 @@ fun! s:Doc.get_funcFmt() "{{{1
 endfun
 
 fun! s:Doc.get_paramsFmt() "{{{1
-  return s:get('paramsFmt', self)
+  return map(s:get('paramsFmt', self), 'v:val =~ "^param" ? self.jollyChar . v:val : v:val')
 endfun
 
 fun! s:Doc.get_paramsParse() "{{{1
@@ -152,7 +153,7 @@ fun! s:Doc.get_paramsParse() "{{{1
 endfun
 
 fun! s:Doc.get_retFmt() "{{{1
-  return s:get('retFmt', self)
+  return map(s:get('retFmt', self), 'v:val =~ "^r" ? self.jollyChar . v:val : v:val')
 endfun
 
 fun! s:Doc.get_prePat() "{{{1
@@ -177,6 +178,10 @@ endfun
 
 fun! s:Doc.get_putBelow() "{{{1
   return s:get('putBelow', self)
+endfun
+
+fun! s:Doc.get_jollyChar() "{{{1
+  return s:get('jollyChar', self)
 endfun
 
 fun! s:Doc.get_boxed() "{{{1
@@ -421,14 +426,15 @@ let s:python = {
       \ 'parsers': ['^%s%s%s%s:'],
       \ 'prePat': '\(class\|def\)\s*',
       \ 'putBelow': 1,
+      \ 'jollyChar': ':',
       \}
 
 "{{{1
 
-fun! s:python.retLine() abort
+fun! s:python.retFmt() abort
   let rtype = substitute(self.funcPost, '\s*->\s*', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
-  return ['@return: ' . rtype . ' ' . s:ph]
+  return ['return: ' . rtype . ' ' . s:ph]
 endfun
 
 fun! s:python.paramsParse() abort
@@ -477,11 +483,11 @@ let s:go = {
 
 "{{{1
 
-fun! s:go.retLine() abort
+fun! s:go.retFmt() abort
   let rtype = substitute(self.funcPost, '^(', '', '')
   let rtype = substitute(rtype, ')$', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
-  return ['@return: ' . rtype . ' ' . s:ph]
+  return ['return: ' . rtype . ' ' . s:ph]
 endfun "}}}
 
 
