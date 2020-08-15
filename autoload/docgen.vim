@@ -146,6 +146,10 @@ fun! s:Doc.get_paramsFmt() "{{{1
   return s:get('paramsFmt', self)
 endfun
 
+fun! s:Doc.get_paramsParse() "{{{1
+  return s:get('paramsParse', self)
+endfun
+
 fun! s:Doc.get_retFmt() "{{{1
   return s:get('retFmt', self)
 endfun
@@ -226,8 +230,8 @@ endfun "}}}
 
 ""
 " Function: s:Doc.format_parsers
-" Convert the parsers to patterns with printf(), replacing the placeholders
-" with the specific patterns for the current filetype.
+" Build the parsers with printf(), replacing the placeholders with the specific
+" patterns for the current filetype.
 "
 " @return: the formatted parsers
 ""
@@ -248,7 +252,7 @@ endfun "}}}
 ""
 " Function: s:Doc.descLines
 "
-" @return: the line(s) with the formatted description
+" @return: the formatted line(s) with the formatted description
 ""
 fun! s:Doc.descLines() abort
   "{{{1
@@ -264,20 +268,30 @@ fun! s:Doc.descLines() abort
 endfun "}}}
 
 ""
+" Function: s:Doc.paramsParse
+" Parse the parameters string, remove unwanted parts, and return a list with
+" the parameters names.
+"
+" @return: a list with the parameters names
+""
+fun! s:Doc.paramsParse() abort
+  let params = substitute(self.funcParams, '<.\{-}>', '', 'g')
+  let params = substitute(params, '\s*=\s*[^,]\+', '', 'g')
+  return split(params, ',')
+endfun
+
+""
 " Function: s:Doc.paramsLines
 "
-" @return: the line(s) with parameters
+" @return: the formatted line(s) with parameters
 ""
 fun! s:Doc.paramsLines() abort
   "{{{1
   if empty(self.get_paramsFmt()) || self.get_minimal()
     return []
   endif
-  let params = substitute(self.funcParams, '<.\{-}>', '', 'g')
-  let params = substitute(params, '\s*=\s*[^,]\+', '', 'g')
-  let params = split(params, ',')
   let lines = []
-  for par in params
+  for par in self.paramsParse()
     for line in self.get_paramsFmt()
       call add(lines, line =~ '%s' ? printf(line, trim(par)) : line)
     endfor
@@ -288,7 +302,7 @@ endfun "}}}
 ""
 " Function: s:Doc.retLine
 "
-" @return: the line(s) with the return value
+" @return: the formatted line(s) with the return value
 ""
 fun! s:Doc.retLine() abort
   "{{{1
