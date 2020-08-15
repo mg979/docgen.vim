@@ -423,6 +423,24 @@ fun! s:python.retLine() abort
   let rtype = substitute(self.funcPost, '\s*->\s*', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
   return ['@return: ' . rtype . ' ' . s:ph]
+endfun
+
+fun! s:python.paramsParse() abort
+  if empty(self.get_paramsFmt()) || self.get_minimal()
+    return []
+  endif
+  let params = substitute(self.funcParams, '\s*=\s*[^,]\+', '', 'g')
+  while params =~ '('
+    let params = substitute(params, '([^(]\{-})', '', 'g')
+  endwhile
+  while params =~ '\['
+    let params = substitute(params, '\[[^[]\{-}]', '', 'g')
+  endwhile
+  while params =~ '{'
+    let params = substitute(params, '{[^{]\{-}}', '', 'g')
+  endwhile
+  let params = substitute(params, ':[^,]\+', '', 'g')
+  return split(params, ',')
 endfun "}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
