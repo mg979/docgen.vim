@@ -67,7 +67,7 @@ fun! docgen#func(bang, count) abort
 
   " process params and return first, if absent the comment will be trimmed
   let doc.lines.params = doc.paramsLines()
-  let doc.lines.return = doc.retLine()
+  let doc.lines.return = doc.retLines()
   let doc.lines.desc = doc.descLines()
 
   let lines = doc.lines.desc + doc.lines.params + doc.lines.return
@@ -310,11 +310,11 @@ fun! s:Doc.paramsLines() abort
 endfun "}}}
 
 ""
-" Function: s:Doc.retLine
+" Function: s:Doc.retLines
 "
 " @return: the formatted line(s) with the return value
 ""
-fun! s:Doc.retLine() abort
+fun! s:Doc.retLines() abort
   "{{{1
   return self.get_minimal() ? [] : self.get_retFmt()
 endfun "}}}
@@ -389,7 +389,7 @@ let s:vim = {
 ""
 " don't add the @return line if no meaningful return value
 ""
-fun! s:vim.retLine() abort
+fun! s:vim.retLines() abort
   return self.get_minimal() ? [] :
         \ search('return\s*[[:alnum:]_([{''"]', 'nW', search('^endf', 'nW'))
         \ ? self.get_retFmt() : []
@@ -414,7 +414,7 @@ endfun
 ""
 " don't add the @return line if no meaningful return value
 ""
-fun! s:lua.retLine() abort
+fun! s:lua.retLines() abort
   return self.get_minimal() ? [] :
         \ search('return\s*[[:alnum:]_([{''"]', 'nW', search('^end', 'nW'))
         \ ? self.get_retFmt() : []
@@ -505,6 +505,11 @@ fun! s:bdoc()
   return get(b:, 'docgen', {})
 endfun "}}}
 
+fun! s:docstring_words(words) abort
+  " {{{1
+  return '^\%(' . join(map(a:words, "'.\\?' . v:val . ' '"), '\|') . '\)\?\S\+:'
+endfun "}}}
+
 ""
 " Function: s:comment
 "
@@ -534,7 +539,7 @@ fun! s:preserve_oldlines(lines, oldlines) abort
   endfor
   for o in range(len(a:oldlines))
     let ol = a:oldlines[o]
-    if ol =~ '^\%(.\?param \|.\?return \)\?\S\+:'
+    if ol =~ s:docstring_words(['param', 'return', 'rtype'])
       continue
     endif
     if index(a:lines, ol) < 0
