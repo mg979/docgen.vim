@@ -229,9 +229,11 @@ endfun "}}}
 fun! s:Doc.search_function() abort
   "{{{1
   let startLn = 0
+  let emptyLn = search('^\s*$', 'cnbW')
+  let minLn = emptyLn ? '\%>' . emptyLn . 'l' : ''
   for p in self.format_parsers()
-    if !startLn || search(p, 'cnbW') > startLn
-      let startLn = search(p, 'cnbW')
+    if !startLn || search(minLn . p, 'cnbW') > startLn
+      let startLn = search(minLn . p, 'cnbW')
       let self.pattern = p
     endif
   endfor
