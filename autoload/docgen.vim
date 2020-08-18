@@ -110,13 +110,13 @@ let s:Doc = {'lines': {}}
 " default formatters for docstring lines
 let s:Doc.funcFmt   = ['%s:' . s:ph, '']
 let s:Doc.paramsFmt = ['param %s: ' . s:ph]
-let s:Doc.retFmt    = ['return: ' . s:ph]
+let s:Doc.rtypeFmt  = ['return: ' . s:ph]
 
 " default patterns for function name, parameters, pre and post
-let s:Doc.prePat    = '\(\)'
+let s:Doc.typePat   = '\(\)'
 let s:Doc.funcPat   = '\s*\([^( \t]\+\)'
 let s:Doc.paramsPat = '\s*(\(.\{-}\))'
-let s:Doc.postPat   = '\s*\(.*\)\?'
+let s:Doc.rtypePat  = '\s*\(.*\)\?'
 
 let s:Doc.boxed     = 0
 let s:Doc.minimal   = 0
@@ -152,12 +152,12 @@ fun! s:Doc.get_paramsParse() "{{{1
   return s:get('paramsParse', self)
 endfun
 
-fun! s:Doc.get_retFmt() "{{{1
-  return map(s:get('retFmt', self), 'v:val =~ "^r" ? self.jollyChar . v:val : v:val')
+fun! s:Doc.get_rtypeFmt() "{{{1
+  return map(s:get('rtypeFmt', self), 'v:val =~ "^r" ? self.jollyChar . v:val : v:val')
 endfun
 
-fun! s:Doc.get_prePat() "{{{1
-  return s:get('prePat', self)
+fun! s:Doc.get_typePat() "{{{1
+  return s:get('typePat', self)
 endfun
 
 fun! s:Doc.get_funcPat() "{{{1
@@ -168,8 +168,8 @@ fun! s:Doc.get_paramsPat() "{{{1
   return s:get('paramsPat', self)
 endfun
 
-fun! s:Doc.get_postPat() "{{{1
-  return s:get('postPat', self)
+fun! s:Doc.get_rtypePat() "{{{1
+  return s:get('rtypePat', self)
 endfun
 
 fun! s:Doc.get_frameChar() "{{{1
@@ -211,11 +211,11 @@ fun! s:Doc.parse(where) abort
   if !a:where
     return 0
   endif
-  let all = matchlist(getline(a:where), self.pattern)[1:4]
-  let self.funcPre    = all[0]
-  let self.funcName   = all[1]
-  let self.funcParams = all[2]
-  let self.funcPost   = all[3]
+  let self.fullMatch   = matchlist(getline(a:where), self.pattern)
+  let self.funcType    = self.fullMatch[1]
+  let self.funcName    = self.fullMatch[2]
+  let self.funcParams  = self.fullMatch[3]
+  let self.funcRtype   = self.fullMatch[4]
   return a:where
 endfun "}}}
 
@@ -251,10 +251,10 @@ fun! s:Doc.format_parsers() abort
   let pats = []
   let parsers = d.get_parsers()
   for p in range(len(parsers))
-    call add(pats, printf(parsers[p], d.get_prePat(),
+    call add(pats, printf(parsers[p], d.get_typePat(),
           \                           d.get_funcPat(),
           \                           d.get_paramsPat(),
-          \                           d.get_postPat()))
+          \                           d.get_rtypePat()))
   endfor
   return pats
 endfun "}}}
@@ -316,7 +316,7 @@ endfun "}}}
 ""
 fun! s:Doc.retLines() abort
   "{{{1
-  return self.get_minimal() ? [] : self.get_retFmt()
+  return self.get_minimal() ? [] : self.get_rtypeFmt()
 endfun "}}}
 
 
@@ -385,14 +385,13 @@ let s:vim = {
       \}
 
 "{{{1
-
 ""
 " don't add the @return line if no meaningful return value
 ""
 fun! s:vim.retLines() abort
   return self.get_minimal() ? [] :
         \ search('return\s*[[:alnum:]_([{''"]', 'nW', search('^endf', 'nW'))
-        \ ? self.get_retFmt() : []
+        \ ? self.get_rtypeFmt() : []
 endfun "}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -400,13 +399,12 @@ endfun "}}}
 let s:lua = {
       \ 'parsers': ['^%sfunction\s%s%s%s',
       \             '^%s%s\s*=\s*function%s%s'],
-      \ 'prePat': '\(local\)\?\s*'
+      \ 'typePat': '\(local\)\?\s*'
       \}
 
 "{{{1
-
 fun! s:lua.descLines() abort
-  let pre = empty(self.funcPre) ? '' : '[' . self.funcPre . '] '
+  let pre = empty(self.funcType) ? '' : '[' . self.funcType . '] '
   let line = printf(pre . self.get_funcFmt()[0], self.funcName)
   return self.get_minimal() ? [line] : [line, '']
 endfun
@@ -417,22 +415,21 @@ endfun
 fun! s:lua.retLines() abort
   return self.get_minimal() ? [] :
         \ search('return\s*[[:alnum:]_([{''"]', 'nW', search('^end', 'nW'))
-        \ ? self.get_retFmt() : []
+        \ ? self.get_rtypeFmt() : []
 endfun "}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:python = {
       \ 'parsers': ['^\s*%s%s%s%s:'],
-      \ 'prePat': '\(class\|def\)\s*',
+      \ 'typePat': '\(class\|def\)\s*',
       \ 'putBelow': 1,
       \ 'jollyChar': ':',
       \}
 
 "{{{1
-
-fun! s:python.retFmt() abort
-  let rtype = substitute(self.funcPost, '\s*->\s*', '', '')
+fun! s:python.rtypeFmt() abort
+  let rtype = substitute(self.funcRtype, '\s*->\s*', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
   return ['return: ' . rtype . ' ' . s:ph]
 endfun
@@ -465,7 +462,7 @@ let s:sh = {
 
 let s:java = {
       \ 'parsers': ['^%s.\{-}%s%s%s\s*[;{]'],
-      \ 'prePat': '\(\(public\|private\|protected\|static\|final\)\s*\)*'
+      \ 'typePat': '\(\(public\|private\|protected\|static\|final\)\s*\)*',
       \}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -482,9 +479,8 @@ let s:go = {
       \}
 
 "{{{1
-
-fun! s:go.retFmt() abort
-  let rtype = substitute(self.funcPost, '^(', '', '')
+fun! s:go.rtypeFmt() abort
+  let rtype = substitute(self.funcRtype, '^(', '', '')
   let rtype = substitute(rtype, ')$', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
   return ['return: ' . rtype . ' ' . s:ph]
