@@ -118,6 +118,10 @@ let s:Doc.namePat   = '\s*\([^( \t]\+\)'
 let s:Doc.paramsPat = '\s*(\(.\{-}\))'
 let s:Doc.rtypePat  = '\s*\(.*\)\?'
 
+" default order for patterns, and the group they match in matchlist()
+let s:Doc.order     = ['type', 'name', 'params', 'rtype']
+let s:Doc.groups    = [1, 2, 3, 4]
+
 let s:Doc.boxed     = 0
 let s:Doc.minimal   = 0
 let s:Doc.putBelow  = 0
@@ -162,6 +166,14 @@ endfun
 
 fun! s:Doc.get_namePat() "{{{1
   return s:get('namePat', self)
+endfun
+
+fun! s:Doc.get_order() "{{{1
+  return s:get('order', self)
+endfun
+
+fun! s:Doc.get_groups() "{{{1
+  return s:get('groups', self)
 endfun
 
 fun! s:Doc.get_paramsPat() "{{{1
@@ -211,11 +223,12 @@ fun! s:Doc.parse(where) abort
   if !a:where
     return 0
   endif
-  let self.fullMatch   = matchlist(getline(a:where), self.pattern)
-  let self.funcType    = self.fullMatch[1]
-  let self.funcName    = self.fullMatch[2]
-  let self.funcParams  = self.fullMatch[3]
-  let self.funcRtype   = self.fullMatch[4]
+  let [g1, g2, g3, g4] = self.get_groups()
+  let self.allMatches  = matchlist(getline(a:where), self.pattern)
+  let self.funcType    = trim(self.allMatches[g1])
+  let self.funcName    = trim(self.allMatches[g2])
+  let self.funcParams  = trim(self.allMatches[g3])
+  let self.funcRtype   = trim(self.allMatches[g4])
   return a:where
 endfun "}}}
 
@@ -252,14 +265,25 @@ fun! s:Doc.format_parsers() abort
   let d = self
   let pats = []
   let parsers = d.get_parsers()
+  let [p1, p2, p3, p4] = self.ordered_patterns()
   for p in range(len(parsers))
-    call add(pats, printf(parsers[p], d.get_typePat(),
-          \                           d.get_funcPat(),
-          \                           d.get_paramsPat(),
-          \                           d.get_rtypePat()))
+    call add(pats, printf(parsers[p], p1, p2, p3, p4))
   endfor
   return pats
 endfun "}}}
+
+""
+" Function: s:Doc.ordered_patterns
+"
+" @return: the patterns of the parser, in the order defined by the filetype
+""
+fun! s:Doc.ordered_patterns() abort
+  let o = self.get_order()
+  return [ eval('self.get_'.o[0].'Pat()'),
+        \  eval('self.get_'.o[1].'Pat()'),
+        \  eval('self.get_'.o[2].'Pat()'),
+        \  eval('self.get_'.o[3].'Pat()') ]
+endfun
 
 ""
 " Function: s:Doc.descLines
