@@ -108,13 +108,13 @@ endfun "}}}
 let s:Doc = {'lines': {}}
 
 " default formatters for docstring lines
-let s:Doc.funcFmt   = ['%s:' . s:ph, '']
+let s:Doc.nameFmt   = ['%s:' . s:ph, '']
 let s:Doc.paramsFmt = ['param %s: ' . s:ph]
 let s:Doc.rtypeFmt  = ['return: ' . s:ph]
 
 " default patterns for function name, parameters, pre and post
 let s:Doc.typePat   = '\(\)'
-let s:Doc.funcPat   = '\s*\([^( \t]\+\)'
+let s:Doc.namePat   = '\s*\([^( \t]\+\)'
 let s:Doc.paramsPat = '\s*(\(.\{-}\))'
 let s:Doc.rtypePat  = '\s*\(.*\)\?'
 
@@ -140,8 +140,8 @@ fun! s:Doc.get_parsers() "{{{1
   return s:get('parsers', self)
 endfun
 
-fun! s:Doc.get_funcFmt() "{{{1
-  return s:get('funcFmt', self)
+fun! s:Doc.get_nameFmt() "{{{1
+  return s:get('nameFmt', self)
 endfun
 
 fun! s:Doc.get_paramsFmt() "{{{1
@@ -160,8 +160,8 @@ fun! s:Doc.get_typePat() "{{{1
   return s:get('typePat', self)
 endfun
 
-fun! s:Doc.get_funcPat() "{{{1
-  return s:get('funcPat', self)
+fun! s:Doc.get_namePat() "{{{1
+  return s:get('namePat', self)
 endfun
 
 fun! s:Doc.get_paramsPat() "{{{1
@@ -269,7 +269,7 @@ endfun "}}}
 fun! s:Doc.descLines() abort
   "{{{1
   let lines = []
-  let template = self.get_funcFmt()
+  let template = self.get_nameFmt()
   if empty(self.lines.params) && empty(self.lines.return)
     call filter(template, 'v:val =~ "%s"')
   endif
