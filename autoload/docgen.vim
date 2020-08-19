@@ -479,9 +479,27 @@ let s:sh = {
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:java = {
-      \ 'parsers': ['^%s.\{-}%s%s%s\s*[;{]'],
-      \ 'typePat': '\(\(public\|private\|protected\|static\|final\)\s*\)*',
+      \ 'parsers': ['^\s*%s%s%s%s\s*[;{]'],
+      \ 'typePat': '\(\%(public\|private\|protected\|static\|final\)\s*\)*',
+      \ 'rtypePat': '\s*\(\S\+\)\s\+',
+      \ 'order': ['type', 'rtype', 'name', 'params'],
+      \ 'groups': [1, 3, 4, 2]
       \}
+
+"{{{1
+
+fun! s:java.rtypeFmt() abort
+  if self.funcRtype == 'void'
+    return []
+  elseif self.funcRtype !~ '\S'
+    return ['return: ' . s:ph]
+  else
+    let rtype = substitute(self.funcRtype, '<.*>', '', '')
+    return ['return ' . rtype . ': ' . s:ph]
+  endif
+endfun
+
+"}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
