@@ -99,7 +99,8 @@ endfun "}}}
 
 fun! s:new() abort
   "{{{1
-  let doc = extend(deepcopy(s:Doc), s:{&filetype})
+  let doc = extend(extend(deepcopy(s:Doc), s:{&filetype}),
+        \                 get(b:, 'docgen', {}))
   let doc.style = s:Style
   let doc.frameChar = s:comment()[3]
   return doc
