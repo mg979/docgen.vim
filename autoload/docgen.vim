@@ -193,11 +193,11 @@ fun! s:Doc.get_jollyChar() "{{{1
 endfun
 
 fun! s:Doc.get_boxed() "{{{1
-  return self.style.get() == 'boxed'
+  return self.style.get_current() == 'boxed'
 endfun
 
 fun! s:Doc.get_minimal() "{{{1
-  return self.style.get() == 'minimal'
+  return self.style.get_current() == 'minimal'
 endfun
 
 fun! s:Doc.get_groups() abort "{{{1
@@ -313,7 +313,7 @@ fun! s:Doc.descLines() abort
 
   if empty(self.lines.params) && empty(self.lines.return)
     return [fname]
-  elseif self.style.get() == 'simple'
+  elseif self.style.get_current() == 'simple'
     return map(self.get_nameFmt(), { k,v -> v =~ '%s' ? fname : v })
   else
     return map(self.get_nameFmt(), { k,v -> v =~ '%s' ? type . fname : v })
@@ -328,10 +328,11 @@ endfun "}}}
 " @return: a list with the parameters names
 ""
 fun! s:Doc.paramsParse() abort
+  "{{{1
   let params = substitute(self.funcParams, '<.\{-}>', '', 'g')
   let params = substitute(params, '\s*=\s*[^,]\+', '', 'g')
   return split(params, ',')
-endfun
+endfun "}}}
 
 ""
 " Function: s:Doc.paramsLines
@@ -373,38 +374,55 @@ let s:Style = {
       \   'current': 0,
       \  }
 
+""
+" Function: s:Style.change
+" @param ...: change to given index
+""
 fun! s:Style.change(...) abort
   "{{{1
   if a:0
     let self.current = a:1 - 1
   endif
-  if self.current >= len(self.list) - 1
+  if self.current >= len(self.get_list()) - 1
     let self.current = 0
   else
     let self.current += 1
   endif
   call self.apply()
-  echo '[docgen] current style:' self.list[self.current]
+  echo '[docgen] current style:' self.get_list()[self.current]
 endfun "}}}
 
+""
+" Function: s:Style.apply
+
+" Apply current style. If it's defined as a function in b:docgen or in the
+" filetype, call that instead.
+""
 fun! s:Style.apply() abort
   "{{{1
-  let ft = s:{&filetype}
-  if self.get() == 'nonboxed'
+  let [ft, current] = [get(b:, 'docgen', s:{&filetype}), self.get_current()]
+  if has_key(ft, current)
+    call ft[current]()
+  elseif current == 'nonboxed'
     let ft.nameFmt = [ 'Function: %s' . s:ph, '' ]
-  elseif self.get() == 'boxed'
+  elseif current == 'boxed'
     let ft.nameFmt = [ 'Function: %s' . s:ph, '' ]
-  elseif self.get() == 'simple'
+  elseif current == 'simple'
     let ft.nameFmt = ['%s:' . s:ph, '']
-  else
+  elseif current == 'minimal'
     let ft.nameFmt = ['%s:' . s:ph]
   endif
 endfun "}}}
 
-fun! s:Style.get() abort
-  let styles = get(s:bdoc(), 'styles', get(s:{&filetype}, 'styles', self.list))
-  return styles[self.current]
-endfun
+fun! s:Style.get_current() abort
+  "{{{1
+  return self.get_list()[self.current]
+endfun "}}}
+
+fun! s:Style.get_list() abort
+  "{{{1
+  return get(s:bdoc(), 'styles', get(s:{&filetype}, 'styles', self.list))
+endfun "}}}
 
 
 
