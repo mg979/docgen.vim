@@ -120,7 +120,6 @@ let s:Doc.rtypePat  = '\s*\(.*\)\?'
 
 " default order for patterns, and the group they match in matchlist()
 let s:Doc.order     = ['type', 'name', 'params', 'rtype']
-let s:Doc.groups    = [1, 2, 3, 4]
 
 let s:Doc.boxed     = 0
 let s:Doc.minimal   = 0
@@ -134,9 +133,9 @@ let s:Doc.jollyChar = '@'
 
 " getters that prefer b:docgen -> s:{&filetype} -> default
 
-fun! s:get(what, doc)
+fun! s:get(what, doc, ...)
   "{{{1
-  let a:doc[a:what] = get(s:bdoc(), a:what, get(s:{&filetype}, a:what, a:doc[a:what]))
+  let a:doc[a:what] = get(s:bdoc(), a:what, get(s:{&filetype}, a:what, a:0 ? a:1 : a:doc[a:what]))
   return type(a:doc[a:what]) == v:t_func ? a:doc[a:what]() : a:doc[a:what]
 endfun "}}}
 
@@ -172,10 +171,6 @@ fun! s:Doc.get_order() "{{{1
   return s:get('order', self)
 endfun
 
-fun! s:Doc.get_groups() "{{{1
-  return s:get('groups', self)
-endfun
-
 fun! s:Doc.get_paramsPat() "{{{1
   return s:get('paramsPat', self)
 endfun
@@ -202,6 +197,25 @@ endfun
 
 fun! s:Doc.get_minimal() "{{{1
   return self.style.get() == 'minimal'
+endfun
+
+fun! s:Doc.get_groups() abort "{{{1
+  ""
+  " The parser creates a list of matches based on the different subpatterns.
+  " These subpatterns have a specific order, depending on the filetype.
+  " Once the list of matches is created, the groups must be assigned to the right
+  " variable, that depends on the position in the order.
+  " For example, if 'type' comes first in the order, funcType must be the
+  " variable that is assigned to the first matched group.
+  "
+  " @return: the groups that must be matched my matchlist()
+  ""
+  return s:get('groups', self, [
+        \ index(self.order, 'type'),
+        \ index(self.order, 'name'),
+        \ index(self.order, 'params'),
+        \ index(self.order, 'rtype'),
+        \])
 endfun "}}}
 
 
@@ -212,8 +226,7 @@ endfun "}}}
 
 ""
 " Function: s:Doc.parse
-" Parse the function declaration and get function name, parameters and return
-" value out of it.
+" Parse the function declaration and get its name, parameters and return type.
 "
 " @param where: the line number with the function declaration, if found
 " @return:      the line number with the function declaration
@@ -224,11 +237,11 @@ fun! s:Doc.parse(where) abort
     return 0
   endif
   let [g1, g2, g3, g4] = self.get_groups()
-  let self.allMatches  = matchlist(getline(a:where), self.pattern)
-  let self.funcType    = trim(self.allMatches[g1])
-  let self.funcName    = trim(self.allMatches[g2])
-  let self.funcParams  = trim(self.allMatches[g3])
-  let self.funcRtype   = trim(self.allMatches[g4])
+  let all  = matchlist(getline(a:where), self.pattern)[1:]
+  let self.funcType    = trim(all[g1])
+  let self.funcName    = trim(all[g2])
+  let self.funcParams  = trim(all[g3])
+  let self.funcRtype   = trim(all[g4])
   return a:where
 endfun "}}}
 
@@ -278,12 +291,13 @@ endfun "}}}
 " @return: the patterns of the parser, in the order defined by the filetype
 ""
 fun! s:Doc.ordered_patterns() abort
+  "{{{1
   let o = self.get_order()
   return [ eval('self.get_'.o[0].'Pat()'),
         \  eval('self.get_'.o[1].'Pat()'),
         \  eval('self.get_'.o[2].'Pat()'),
         \  eval('self.get_'.o[3].'Pat()') ]
-endfun
+endfun "}}}
 
 ""
 " Function: s:Doc.descLines
@@ -483,7 +497,6 @@ let s:java = {
       \ 'typePat': '\(\%(public\|private\|protected\|static\|final\)\s*\)*',
       \ 'rtypePat': '\s*\(\S\+\)\s\+',
       \ 'order': ['type', 'rtype', 'name', 'params'],
-      \ 'groups': [1, 3, 4, 2]
       \}
 
 "{{{1
