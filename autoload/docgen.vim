@@ -268,15 +268,17 @@ endfun "}}}
 ""
 fun! s:Doc.descLines() abort
   "{{{1
-  let lines = []
-  let template = self.get_nameFmt()
+  let lineWithName = filter(copy(self.get_nameFmt()), 'v:val =~ "%s"')[0]
+  let fname = printf(lineWithName, self.funcName)
+  let type = self.funcType !~ '\S' ? '' : '[' . self.funcType . '] '
+
   if empty(self.lines.params) && empty(self.lines.return)
-    call filter(template, 'v:val =~ "%s"')
+    return [fname]
+  elseif self.style.get() == 'simple'
+    return map(self.get_nameFmt(), { k,v -> v =~ '%s' ? fname : v })
+  else
+    return map(self.get_nameFmt(), { k,v -> v =~ '%s' ? type . fname : v })
   endif
-  for v in template
-    call add(lines, v =~ '%s' ? printf(v, self.funcName) : v)
-  endfor
-  return lines
 endfun "}}}
 
 ""
@@ -401,12 +403,6 @@ let s:lua = {
       \}
 
 "{{{1
-fun! s:lua.descLines() abort
-  let pre = empty(self.funcType) ? '' : '[' . self.funcType . '] '
-  let line = printf(pre . self.get_funcFmt()[0], self.funcName)
-  return self.get_minimal() ? [line] : [line, '']
-endfun
-
 ""
 " don't add the @return line if no meaningful return value
 ""
