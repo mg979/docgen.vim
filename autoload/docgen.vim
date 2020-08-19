@@ -168,10 +168,6 @@ fun! s:Doc.get_namePat() "{{{1
   return s:get('namePat', self)
 endfun
 
-fun! s:Doc.get_order() "{{{1
-  return s:get('order', self)
-endfun
-
 fun! s:Doc.get_paramsPat() "{{{1
   return s:get('paramsPat', self)
 endfun
@@ -198,6 +194,10 @@ endfun
 
 fun! s:Doc.get_minimal() "{{{1
   return self.style.get_current() == 'minimal'
+endfun
+
+fun! s:Doc.get_order() "{{{1
+  return s:get('order', self)
 endfun
 
 fun! s:Doc.get_groups() abort "{{{1
@@ -307,8 +307,10 @@ endfun "}}}
 ""
 fun! s:Doc.descLines() abort
   "{{{1
-  let lineWithName = filter(copy(self.get_nameFmt()), 'v:val =~ "%s"')[0]
-  let fname = printf(lineWithName, self.funcName)
+  let linesWithName = filter(copy(self.get_nameFmt()), 'v:val =~ "%s"')
+  if empty(linesWithName) | return self.get_nameFmt() | endif
+
+  let fname = printf(linesWithName[0], self.funcName)
   let type = self.funcType !~ '\S' ? '' : '[' . self.funcType . '] '
 
   if empty(self.lines.params) && empty(self.lines.return)
@@ -368,6 +370,10 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Styles
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+""
+" this variable is linked inside the Doc instance, but not copied, so its
+" values are supposed to persist between across instantiations.
+""
 
 let s:Style = {
       \   'list': ['nonboxed', 'boxed', 'simple', 'minimal'],
@@ -375,7 +381,7 @@ let s:Style = {
       \  }
 
 ""
-" Function: s:Style.change
+" s:Style.change
 " @param ...: change to given index
 ""
 fun! s:Style.change(...) abort
@@ -393,8 +399,8 @@ fun! s:Style.change(...) abort
 endfun "}}}
 
 ""
-" Function: s:Style.apply
-
+" s:Style.change
+"
 " Apply current style. If it's defined as a function in b:docgen or in the
 " filetype, call that instead.
 ""
@@ -414,11 +420,17 @@ fun! s:Style.apply() abort
   endif
 endfun "}}}
 
+""
+" s:Style.get_current: return currently active style
+""
 fun! s:Style.get_current() abort
   "{{{1
   return self.get_list()[self.current]
 endfun "}}}
 
+""
+" s:Style.get_list: return current styles list
+""
 fun! s:Style.get_list() abort
   "{{{1
   return get(s:bdoc(), 'styles', get(s:{&filetype}, 'styles', self.list))
@@ -561,21 +573,25 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 fun! s:is_comment(line) abort
+  "{{{1
   return synIDattr(synID(a:line, indent(a:line) + 1, 1), "name") =~? 'comment'
-endfun
+endfun "}}}
 
 fun! s:bdoc()
   " {{{1
   return get(b:, 'docgen', {})
 endfun "}}}
 
+""
+" s:docstring_words: return a pattern that matches docstring-specific words
+""
 fun! s:docstring_words(words) abort
   " {{{1
   return '^\%(' . join(map(a:words, "'.\\?' . v:val . ' '"), '\|') . '\)\?\S\+:'
 endfun "}}}
 
 ""
-" Function: s:comment
+" s:comment
 "
 " @return: a list with four elements:
 "          [0]  the opening multiline comment chars
@@ -590,6 +606,13 @@ fun! s:comment()
   return cm == '/*%s*/' ? ['/*', ' *', ' */', '*'] : [c, c, c, trim(c)[:0]]
 endfun "}}}
 
+""
+" s:preserve_oldlines: keep the valid lines of the previous docstring
+"
+" @param lines:    the new lines
+" @param oldlines: the old lines
+" @return: the merged lines
+""
 fun! s:preserve_oldlines(lines, oldlines) abort
   " {{{1
   for l in range(len(a:lines))
@@ -614,9 +637,10 @@ fun! s:preserve_oldlines(lines, oldlines) abort
 endfun "}}}
 
 ""
-" Function: s:previous_docstring
+" s:previous_docstring
 "
 " @param start: start line
+" @param below: whether the docstring will be added below the declaration
 " @return: the lines in the docstring before update
 ""
 fun! s:previous_docstring(start, below) abort
@@ -654,8 +678,7 @@ fun! s:previous_docstring(start, below) abort
 endfun "}}}
 
 ""
-" Function: s:align
-" Align placeholders in the given line.
+" s:align: align placeholders in the given line.
 "
 " @param lines: the lines to align
 " @param ...:   an optional pattern, if found the line is kept as it is
@@ -678,7 +701,13 @@ fun! s:align(lines, ...) abort
   return a:lines
 endfun "}}}
 
+""
+" s:replace_comment: replace previous docstring with the new one.
+"
+" @return: the removed lines, if not empty
+""
 fun! s:replace_comment() abort
+  "{{{1
   let startLn = 0
   if s:is_comment(line('.'))
     let [startLn, endLn] = [line('.'), line('.')]
@@ -702,8 +731,16 @@ fun! s:replace_comment() abort
     let lines = ['']
   endif
   return lines
-endfun
+endfun "}}}
 
+""
+" s:create_box: create a box with the docstring
+"
+" @param lines: the docstring lines
+" @param boxed: with full frame or not
+" @param ...:   optional char for frame
+" @return: the box lines
+""
 fun! s:create_box(lines, boxed, ...) abort
   " {{{1
   let [a, m, b, M] = s:comment()
@@ -724,6 +761,12 @@ fun! s:create_box(lines, boxed, ...) abort
   return [box1] + a:lines + [box2]
 endfun "}}}
 
+""
+" s:reindent_box
+"
+" @param lines:     the lines to reindent
+" @param frameChar: the character used for the frame
+""
 fun! s:reindent_box(lines, frameChar) abort
   "{{{1
   silent keepjumps normal! `[=`]
