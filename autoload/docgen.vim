@@ -185,11 +185,11 @@ fun! s:Doc.get_jollyChar() "{{{1
 endfun
 
 fun! s:Doc.get_boxed() "{{{1
-  return s:get('boxed', self)
+  return self.style.get() == 'boxed'
 endfun
 
 fun! s:Doc.get_minimal() "{{{1
-  return s:get('minimal', self)
+  return self.style.get() == 'minimal'
 endfun "}}}
 
 
@@ -349,25 +349,21 @@ endfun "}}}
 fun! s:Style.apply() abort
   "{{{1
   let ft = s:{&filetype}
-  let styles = get(s:bdoc(), 'styles', get(ft, 'styles', self.list))
-  if styles[self.current] == 'nonboxed'
-    let ft.funcFmt = [ 'Function: %s' . s:ph, '' ]
-    let ft.boxed = 0
-    let ft.minimal = 0
-  elseif styles[self.current] == 'boxed'
-    let ft.funcFmt = [ 'Function: %s' . s:ph, '' ]
-    let ft.boxed = 1
-    let ft.minimal = 0
-  elseif styles[self.current] == 'simple'
-    let ft.funcFmt = ['%s:' . s:ph, '']
-    let ft.boxed = 0
-    let ft.minimal = 0
+  if self.get() == 'nonboxed'
+    let ft.nameFmt = [ 'Function: %s' . s:ph, '' ]
+  elseif self.get() == 'boxed'
+    let ft.nameFmt = [ 'Function: %s' . s:ph, '' ]
+  elseif self.get() == 'simple'
+    let ft.nameFmt = ['%s:' . s:ph, '']
   else
-    let ft.funcFmt = ['%s:' . s:ph]
-    let ft.boxed = 0
-    let ft.minimal = 1
+    let ft.nameFmt = ['%s:' . s:ph]
   endif
 endfun "}}}
+
+fun! s:Style.get() abort
+  let styles = get(s:bdoc(), 'styles', get(s:{&filetype}, 'styles', self.list))
+  return styles[self.current]
+endfun
 
 
 
