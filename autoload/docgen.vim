@@ -51,7 +51,12 @@ fun! docgen#func(bang, count) abort
 
   let doc = s:new()
   if a:bang
-    call doc.style.change()
+    if a:count
+      call doc.style.change(a:count - 1)
+    else
+      let doc.style.putBelow = !doc.get_putBelow()
+      call doc.style.apply(1)
+    endif
     return
   elseif a:count
     call doc.style.change(a:count - 1)
@@ -102,6 +107,7 @@ fun! s:new() abort
   let doc = extend(extend(deepcopy(s:Doc), s:{&filetype}),
         \                 get(b:, 'docgen', {}))
   let doc.style = s:Style
+  let doc.style.putBelow = doc.get_putBelow()
   let doc.frameChar = s:comment()[3]
   return doc
 endfun "}}}
@@ -181,7 +187,7 @@ fun! s:Doc.get_frameChar() "{{{1
 endfun
 
 fun! s:Doc.get_putBelow() "{{{1
-  return s:get('putBelow', self)
+  return get(self.style, 'putBelow', s:get('putBelow', self))
 endfun
 
 fun! s:Doc.get_jollyChar() "{{{1
@@ -394,8 +400,7 @@ fun! s:Style.change(...) abort
   else
     let self.current += 1
   endif
-  call self.apply()
-  echo '[docgen] current style:' self.get_list()[self.current]
+  call self.apply(1)
 endfun "}}}
 
 ""
@@ -403,8 +408,9 @@ endfun "}}}
 "
 " Apply current style. If it's defined as a function in b:docgen or in the
 " filetype, call that instead.
+" @param ...: print current style
 ""
-fun! s:Style.apply() abort
+fun! s:Style.apply(...) abort
   "{{{1
   let [ft, current] = [get(b:, 'docgen', s:{&filetype}), self.get_current()]
   if has_key(ft, current)
@@ -417,6 +423,10 @@ fun! s:Style.apply() abort
     let ft.nameFmt = ['%s:' . s:ph, '']
   elseif current == 'minimal'
     let ft.nameFmt = ['%s:' . s:ph]
+  endif
+  if a:0
+    let blw = self.putBelow ? '[below]' : ''
+    echo '[docgen] current style:' self.get_list()[self.current] blw
   endif
 endfun "}}}
 

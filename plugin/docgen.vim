@@ -21,7 +21,7 @@ let g:loaded_docgen = 1
 
 if get(g:, 'docgen_mappings', 1)
   nnoremap <silent> ,d :<C-u>DocFun <C-r>=v:count?v:count:''<CR><cr>
-  nnoremap <silent> ,D :<C-u>DocFun!<cr>
+  nnoremap <silent> ,D :<C-u>DocFun! <C-r>=v:count?v:count:''<CR><cr>
   nnoremap <silent> ,x :<C-u>DocBox<cr>
   nnoremap <silent> ,X :<C-u>DocBox!<cr>
 endif
