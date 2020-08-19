@@ -115,7 +115,13 @@ endfun "}}}
 let s:Doc = {'lines': {}}
 
 " default formatters for docstring lines
-let s:Doc.nameFmt   = ['%s:' . s:ph, '']
+let s:Doc.nameFmt   = {
+      \ 'boxed':    ['Function: %s' . s:ph, ''],
+      \ 'nonboxed': ['Function: %s' . s:ph, ''],
+      \ 'simple':   ['%s:' . s:ph],
+      \ 'minimal':  ['%s:' . s:ph, ''],
+      \}
+
 let s:Doc.paramsFmt = ['param %s: ' . s:ph]
 let s:Doc.rtypeFmt  = ['return: ' . s:ph]
 
@@ -151,7 +157,7 @@ fun! s:Doc.get_parsers() "{{{1
 endfun
 
 fun! s:Doc.get_nameFmt() "{{{1
-  return s:get('nameFmt', self)
+  return self.style._nameFmt
 endfun
 
 fun! s:Doc.get_paramsFmt() "{{{1
@@ -313,8 +319,10 @@ endfun "}}}
 ""
 fun! s:Doc.descLines() abort
   "{{{1
-  let linesWithName = filter(copy(self.get_nameFmt()), 'v:val =~ "%s"')
-  if empty(linesWithName) | return self.get_nameFmt() | endif
+  let fmt = copy(self.get_nameFmt())
+
+  let linesWithName = filter(copy(fmt), 'v:val =~ "%s"')
+  if empty(linesWithName) | return fmt | endif
 
   let fname = printf(linesWithName[0], self.funcName)
   let type = self.funcType !~ '\S' ? '' : '[' . self.funcType . '] '
@@ -322,9 +330,9 @@ fun! s:Doc.descLines() abort
   if empty(self.lines.params) && empty(self.lines.return)
     return [fname]
   elseif self.style.get_current() == 'simple'
-    return map(self.get_nameFmt(), { k,v -> v =~ '%s' ? fname : v })
+    return map(fmt, { k,v -> v =~ '%s' ? fname : v })
   else
-    return map(self.get_nameFmt(), { k,v -> v =~ '%s' ? type . fname : v })
+    return map(fmt, { k,v -> v =~ '%s' ? type . fname : v })
   endif
 endfun "}}}
 
@@ -404,7 +412,7 @@ fun! s:Style.change(...) abort
 endfun "}}}
 
 ""
-" s:Style.change
+" s:Style.apply
 "
 " Apply current style. If it's defined as a function in b:docgen or in the
 " filetype, call that instead.
@@ -413,20 +421,13 @@ endfun "}}}
 fun! s:Style.apply(...) abort
   "{{{1
   let [ft, current] = [get(b:, 'docgen', s:{&filetype}), self.get_current()]
-  if has_key(ft, current)
-    call ft[current]()
-  elseif current == 'nonboxed'
-    let ft.nameFmt = [ 'Function: %s' . s:ph, '' ]
-  elseif current == 'boxed'
-    let ft.nameFmt = [ 'Function: %s' . s:ph, '' ]
-  elseif current == 'simple'
-    let ft.nameFmt = ['%s:' . s:ph, '']
-  elseif current == 'minimal'
-    let ft.nameFmt = ['%s:' . s:ph]
-  endif
+
+  let self._nameFmt = has_key(ft, current)         ? ft[current]()
+        \           : !has_key(ft, 'nameFmt')      ? s:Doc.nameFmt[current]
+        \           : type(ft.nameFmt) == v:t_dict ? ft.nameFmt[current]
+        \                                          : ft.nameFmt
   if a:0
-    let blw = self.putBelow ? '[below]' : ''
-    echo '[docgen] current style:' self.get_list()[self.current] blw
+    call self.echo()
   endif
 endfun "}}}
 
@@ -445,6 +446,14 @@ fun! s:Style.get_list() abort
   "{{{1
   return get(s:bdoc(), 'styles', get(s:{&filetype}, 'styles', self.list))
 endfun "}}}
+
+""
+" s:Style.echo: print current style settings
+""
+fun! s:Style.echo() abort
+  let blw = self.putBelow ? '[below]' : ''
+  echo '[docgen] current style:' self.get_list()[self.current] blw
+endfun
 
 
 
@@ -558,7 +567,8 @@ endfun
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:ruby = {
-      \ 'parsers': ['^def\s\+%s%s[=!]\?%s%s']
+      \ 'parsers': ['^\s*def\s\+%s%s[=!]\?%s%s'],
+      \ 'nameFmt': [s:ph]
       \}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
