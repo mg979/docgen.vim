@@ -20,10 +20,11 @@ let s:ph = '$' . 'PLACEHOLDER'
 fun! docgen#box(bang) abort
   " {{{1
   let @= = ''
-  let lines = s:create_box(s:replace_comment(), a:bang)
+  let rChar = s:comment()[3]
+  let lines = s:create_box(s:replace_comment(), a:bang, rChar)
   silent -1put =lines
 
-  call s:reindent_box(lines, s:comment()[3])
+  call s:reindent_box(lines, rChar)
   normal! `[j
   " could be a converted comment
   let @= = getline('.') !~ '\w' ? '"A"' : ''
@@ -755,22 +756,21 @@ endfun "}}}
 
 ""
 " s:create_box: create a box with the docstring
-"
+
 " @param lines: the docstring lines
 " @param boxed: with full frame or not
-" @param ...:   optional char for frame
+" @param rchar: character used for full frame
 " @return: the box lines
 ""
-fun! s:create_box(lines, boxed, ...) abort
+fun! s:create_box(lines, boxed, rchar) abort
   " {{{1
-  let [a, m, b, M] = s:comment()
-  let rchar = a:0 ? a:1 : M
+  let [a, m, b, _] = s:comment()
   let rwidth = &tw ? &tw : 79
   if a:boxed && a != b
-    let box1 = a . repeat(rchar, rwidth - strlen(a))
-    let box2 = ' ' . repeat(rchar, rwidth - strlen(a) - 1) . trim(b)
+    let box1 = a . repeat(a:rchar, rwidth - strlen(a))
+    let box2 = ' ' . repeat(a:rchar, rwidth - strlen(a) - 1) . trim(b)
   elseif a:boxed
-    let box1 = m . repeat(rchar, rwidth - strlen(a))
+    let box1 = m . repeat(a:rchar, rwidth - strlen(a))
     let box2 = box1
   else
     let box1 = a . trim(m)
