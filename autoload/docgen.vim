@@ -56,7 +56,9 @@ fun! docgen#func(bang, count) abort
     if a:count
       call doc.style.change(a:count - 1)
     else
-      let doc.style.putBelow = !doc.get_putBelow()
+      " we set the filetype variable, so that this setting persits only for
+      " files of the same type
+      let s:{&filetype}.putBelow = !doc.get_putBelow()
       call doc.style.apply(1)
     endif
     return
@@ -209,7 +211,7 @@ fun! s:Doc.get_comment() "{{{1
 endfun
 
 fun! s:Doc.get_putBelow() "{{{1
-  return get(self.style, 'putBelow', s:get('putBelow', self))
+  return s:get('putBelow', self)
 endfun
 
 fun! s:Doc.get_jollyChar() "{{{1
@@ -597,7 +599,7 @@ endfun "}}}
 " s:Style.echo: print current style settings
 ""
 fun! s:Style.echo() abort
-  let blw = self.putBelow ? '[below]' : ''
+  let blw = self.doc.get_putBelow() ? '[below]' : ''
   echo '[docgen] current style:' self.get_list()[self.current] blw
 endfun
 
