@@ -20,10 +20,11 @@ let s:ph = '$' . 'PLACEHOLDER'
 fun! docgen#box(bang, cnt) abort
   " {{{1
   let [rChar, is_comment] = [s:comment()[3], s:is_comment(line('.'))]
+  let indent = matchstr(getline('.'), '^\s*')
   let lines = s:create_box(s:replace_comment(), a:bang, rChar, a:cnt)
   exe 'silent' (is_comment ? '-1': '') . 'put =lines'
 
-  call s:reindent_box(lines, rChar)
+  call s:reindent_box(lines, indent, rChar)
   normal! `[
   exe 'normal!' (a:cnt + 1) . 'j'
   " could be a converted comment
@@ -70,6 +71,9 @@ fun! docgen#func(bang, count) abort
   " move to the line with the function declaration
   exe startLn
 
+  " get the indent for the docstring
+  let indent = matchstr(getline(doc.get_putBelow() ? startLn + 1 : startLn), '^\s*')
+
   " process params and return first, if absent the comment will be trimmed
   let doc.lines.params = doc.paramsLines()
   let doc.lines.return = doc.retLines()
@@ -84,7 +88,7 @@ fun! docgen#func(bang, count) abort
   let lines = s:create_box( lines, doc.get_boxed(), doc.get_frameChar(), 0 )
 
   exe 'silent ' ( doc.get_putBelow() ? '' : '-1' ) . 'put =lines'
-  call s:reindent_box(lines, doc.get_frameChar())
+  call s:reindent_box(lines, indent, doc.get_frameChar())
 
   " edit first placeholder, or go back to starting line if none is found
   normal! {
@@ -802,16 +806,16 @@ endfun "}}}
 " @param lines:     the lines to reindent
 " @param frameChar: the character used for the frame
 ""
-fun! s:reindent_box(lines, frameChar) abort
+fun! s:reindent_box(lines, indent, frameChar) abort
   "{{{1
   silent keepjumps normal! `[=`]
-
   let i = line('.')
-  for l in a:lines
-    let [line, maxw] = [getline(i), &tw ? &tw : 79]
+  call map(a:lines, 'substitute(v:val, "^\s*", a:indent, "")')
+  for line in a:lines
+    let maxw = &tw ? &tw : 79
     if strlen(line) > maxw
       let removeChars = printf('\V%s\{%s}', a:frameChar, strlen(line) - maxw)
-      let line = substitute(getline(i), removeChars, '', '')
+      let line = substitute(line, removeChars, '', '')
     endif
     call setline(i, line)
     let i += 1
