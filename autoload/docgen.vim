@@ -21,7 +21,7 @@ fun! docgen#box(bang, cnt) abort
   " {{{1
   let rChar = s:comment()[3]
   let lines = s:create_box(s:replace_comment(), a:bang, rChar, a:cnt)
-  silent -1put =lines
+  silent put =lines
 
   call s:reindent_box(lines, rChar)
   normal! `[
