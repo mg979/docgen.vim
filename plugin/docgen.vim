@@ -20,13 +20,13 @@ let g:loaded_docgen = 1
 " COMMANDS AND MAPPINGS {{{1
 
 if get(g:, 'docgen_mappings', 1)
-  nnoremap <silent> ,d :<C-U>call docgen#func(0,v:count?v:count:'')<cr>@=<cr>
+  nnoremap <silent> ,d :<C-U>let @= = '""'<bar>call docgen#func(0,v:count?v:count:'')<cr>@=<cr>
   nnoremap <silent> ,D :<C-u>DocFun! <C-r>=v:count?v:count:''<CR><cr>
-  nnoremap <silent> ,x :<C-U>call docgen#box(0)<cr>@=<cr>
-  nnoremap <silent> ,X :<C-U>call docgen#box(1)<cr>@=<cr>
+  nnoremap <silent> ,x :<C-U>let @= = '""'<bar>call docgen#box(0, v:count)<cr>@=<cr>
+  nnoremap <silent> ,X :<C-U>let @= = '""'<bar>call docgen#box(1, v:count)<cr>@=<cr>
 endif
 
-command! -count -bang DocFun call docgen#func(<bang>0, <count>)
-command! -bar -bang   DocBox call docgen#box(<bang>0)
+command! -count -bang DocFun let @= = '""' | call docgen#func(<bang>0, <count>) | if !<bang>0 | call feedkeys("@=\<CR>", 'n') | endif
+command! -count -bang DocBox let @= = '""' | call docgen#box(<bang>0, <count>) | if !<bang>0 | call feedkeys("@=\<CR>", 'n') | endif
 
 " vim: et sw=2 ts=2 sts=2 fdm=marker

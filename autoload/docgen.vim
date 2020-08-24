@@ -17,17 +17,17 @@ let s:ph = '$' . 'PLACEHOLDER'
 "
 " @param bang: with full length frame
 ""
-fun! docgen#box(bang) abort
+fun! docgen#box(bang, cnt) abort
   " {{{1
-  let @= = ''
   let rChar = s:comment()[3]
-  let lines = s:create_box(s:replace_comment(), a:bang, rChar)
+  let lines = s:create_box(s:replace_comment(), a:bang, rChar, a:cnt)
   silent -1put =lines
 
   call s:reindent_box(lines, rChar)
-  normal! `[j
+  normal! `[
+  exe 'normal!' (a:cnt + 1) . 'j'
   " could be a converted comment
-  let @= = getline('.') !~ '\w' ? '"A"' : ''
+  let @= = getline('.') !~ '\w' ? '"A"' : '""'
 endfun "}}}
 
 
@@ -38,7 +38,6 @@ endfun "}}}
 ""
 fun! docgen#func(bang, count) abort
   " {{{1
-  let @= = ''
   let ft = split(&filetype, '\.')[0]
   if index(s:supported, ft) < 0 && !exists('b:docgen')
     echo '[docgen] not supported'
@@ -82,9 +81,9 @@ fun! docgen#func(bang, count) abort
   let lines = s:preserve_oldlines( lines, s:previous_docstring(startLn, doc.get_putBelow()) )
 
   " align placeholders and create box
-  let lines = s:create_box( lines, doc.get_boxed(), doc.get_frameChar() )
+  let lines = s:create_box( lines, doc.get_boxed(), doc.get_frameChar(), 0 )
 
-  exe 'silent ' ( doc.get_putBelow() ? '' : '-1' ) . 'put =lines'
+  silent call append(doc.get_putBelow() ? line('.') : line('.') - 1, lines)
   call s:reindent_box(lines, doc.get_frameChar())
 
   " edit first placeholder, or go back to starting line if none is found
@@ -762,7 +761,7 @@ endfun "}}}
 " @param rchar: character used for full frame
 " @return: the box lines
 ""
-fun! s:create_box(lines, boxed, rchar) abort
+fun! s:create_box(lines, boxed, rchar, extraHeight) abort
   " {{{1
   let [a, m, b, _] = s:comment()
   let rwidth = &tw ? &tw : 79
@@ -776,9 +775,10 @@ fun! s:create_box(lines, boxed, rchar) abort
     let box1 = a . trim(m)
     let box2 = m . trim(b)
   endif
+  let extra = map(range(a:extraHeight), { k,v -> m })
   call map(a:lines, 'v:val == "" || v:val == m ?'.
         \ '(v:val . m) : (m . " " . v:val)')
-  return [box1] + a:lines + [box2]
+  return [box1] + extra + a:lines + extra + [box2]
 endfun "}}}
 
 ""
