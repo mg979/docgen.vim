@@ -638,7 +638,7 @@ fun! s:preserve_oldlines(lines, oldlines) abort
   for l in range(len(a:lines))
     let line = substitute(a:lines[l], '\V' . s:ph, '', 'g')
     for ol in a:oldlines
-      if line != '' && ol =~ '^\V' . line
+      if line != '' && ol =~ '^\V' . trim(line)
         let a:lines[l] = ol
         break
       endif
