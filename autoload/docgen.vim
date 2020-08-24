@@ -342,15 +342,12 @@ fun! s:Doc.descLines() abort
   let linesWithName = filter(copy(fmt), 'v:val =~ "%s"')
   if empty(linesWithName) | return fmt | endif
 
-  let fname = printf(linesWithName[0], self.funcName)
-  let type = self.funcType !~ '\S' ? '' : '[' . self.funcType . '] '
+  let name = printf(linesWithName[0], self.funcName)
 
   if empty(self.lines.params) && empty(self.lines.return)
-    return [fname]
-  elseif self.style.get_current() == 'simple'
-    return map(fmt, { k,v -> v =~ '%s' ? fname : v })
+    return [name]
   else
-    return map(fmt, { k,v -> v =~ '%s' ? type . fname : v })
+    return map(fmt, { k,v -> v =~ '%s' ? name : v })
   endif
 endfun "}}}
 
@@ -639,6 +636,14 @@ let s:lua = {
       \}
 
 "{{{1
+fun! s:lua.descLines() abort
+  let style     = self.style.get_current()
+  let oneline   = empty(self.lines.params) && empty(self.lines.return)
+
+  return style == 'minimal' || style == 'simple' || oneline ?
+        \ [self.funcName] : [self.funcName, '']
+endfun
+
 ""
 " don't add the @return line if no meaningful return value
 ""
