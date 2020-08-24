@@ -83,7 +83,7 @@ fun! docgen#func(bang, count) abort
   " align placeholders and create box
   let lines = s:create_box( lines, doc.get_boxed(), doc.get_frameChar(), 0 )
 
-  silent call append(doc.get_putBelow() ? line('.') : line('.') - 1, lines)
+  exe 'silent ' ( doc.get_putBelow() ? '' : '-1' ) . 'put =lines'
   call s:reindent_box(lines, doc.get_frameChar())
 
   " edit first placeholder, or go back to starting line if none is found
@@ -92,6 +92,7 @@ fun! docgen#func(bang, count) abort
     let @/ = s:ph
     let @= = '''"_cgn'''
   else
+    let @= = '""'
     exe startLn
   endif
 endfun "}}}
