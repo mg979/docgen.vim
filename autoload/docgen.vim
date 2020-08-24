@@ -14,8 +14,8 @@ let s:ph = '$' . 'PLACEHOLDER'
 
 ""
 " docgen#box: create a comment box
-"
 " @param bang: with full length frame
+" @param cnt:  extra height of the box, both above and below
 ""
 fun! docgen#box(bang, cnt) abort
   " {{{1
@@ -33,8 +33,8 @@ endfun "}}}
 
 ""
 " docgen#func: create or update template for function documentation
-"
 " @param bang: with full length frame
+" @param count: set style
 ""
 fun! docgen#func(bang, count) abort
   " {{{1
@@ -102,6 +102,10 @@ endfun "}}}
 " Formatter initializer
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+""
+" s:new: start a new DocGen instance
+" @return: the instance
+""
 fun! s:new() abort
   "{{{1
   let doc = extend(extend(deepcopy(s:Doc), s:{&filetype}),
@@ -161,7 +165,7 @@ fun! s:Doc.get_nameFmt() "{{{1
 endfun
 
 fun! s:Doc.get_paramsFmt() "{{{1
-  return map(s:get('paramsFmt', self), 'v:val =~ "^param" ? self.jollyChar . v:val : v:val')
+  return map(s:get('paramsFmt', self), { k,v -> v =~ '^param' ? self.jollyChar . v : v })
 endfun
 
 fun! s:Doc.get_paramsParse() "{{{1
@@ -169,7 +173,7 @@ fun! s:Doc.get_paramsParse() "{{{1
 endfun
 
 fun! s:Doc.get_rtypeFmt() "{{{1
-  return map(s:get('rtypeFmt', self), 'v:val =~ "^r" ? self.jollyChar . v:val : v:val')
+  return map(s:get('rtypeFmt', self), { k,v -> v =~ '^r' ? self.jollyChar . v : v })
 endfun
 
 fun! s:Doc.get_typePat() "{{{1
@@ -607,7 +611,10 @@ endfun "}}}
 ""
 fun! s:docstring_words(words) abort
   " {{{1
-  return '^\%(' . join(map(a:words, "'.\\?' . v:val . ' '"), '\|') . '\)\?\S\+:'
+  " the word preceded by an optional jollyChar and followed by a space
+  let wordPatterns = map(a:words, { k,v -> '.\?' . v . ' ' })
+  " join word patterns and make them optional
+  return '^\%(' . join(wordPatterns, '\|') . '\)\?\S\+:'
 endfun "}}}
 
 ""
@@ -635,6 +642,9 @@ endfun "}}}
 ""
 fun! s:preserve_oldlines(lines, oldlines) abort
   " {{{1
+  " here we handle docstring generated lines, not extra edits
+  " we compare the generated lines with the old lines, and we keep the ones
+  " that look similar
   for l in range(len(a:lines))
     let line = substitute(a:lines[l], '\V' . s:ph, '', 'g')
     for ol in a:oldlines
@@ -644,8 +654,12 @@ fun! s:preserve_oldlines(lines, oldlines) abort
       endif
     endfor
   endfor
+  " here we handle extra edits, that is lines that have been inserted by the
+  " user and that are not part of the generated docstring
   for o in range(len(a:oldlines))
     let ol = a:oldlines[o]
+    " if the old line looks like @param, @rtype, etc, it's been generated and
+    " we've already handled it
     if ol =~ s:docstring_words(['param', 'return', 'rtype'])
       continue
     endif
@@ -706,7 +720,7 @@ endfun "}}}
 ""
 fun! s:align(lines, ...) abort
   " {{{1
-  let maxlen = max(map(copy(a:lines), 'strlen(a:0 && v:val =~ a:1 ? "" : v:val)'))
+  let maxlen = max(map(copy(a:lines), { k,v -> strlen(a:0 && v =~ a:1 ? "" : v) }))
   if maxlen > 50 " don't align if lines are too long
     return a:lines
   endif
@@ -739,7 +753,7 @@ fun! s:replace_comment() abort
     endwhile
     let lines = getline(startLn, endLn)
     " strip the previous comment chars
-    call map(lines, 'substitute(v:val, "^\\s*[[:punct:]]\\+\\s*", "", "")' )
+    call map(lines, { k,v -> substitute(v, '^\s*[[:punct:]]\+\s*', '', '') })
     if empty(lines[0])
       call remove(lines, 0)
     endif
@@ -777,7 +791,7 @@ fun! s:create_box(lines, boxed, rchar, extraHeight) abort
   endif
   let extra = map(range(a:extraHeight), { k,v -> m })
   call map(a:lines, 'v:val == "" || v:val == m ?'.
-        \ '(v:val . m) : (m . " " . v:val)')
+        \           '(v:val . m) : (m . " " . v:val)')
   return [box1] + extra + a:lines + extra + [box2]
 endfun "}}}
 
