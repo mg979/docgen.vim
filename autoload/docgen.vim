@@ -38,7 +38,7 @@ endfun "}}}
 ""
 fun! docgen#func(bang, count) abort
   " {{{1
-  let ft = split(&filetype, '\.')[0]
+  let [ft, @=] = [split(&filetype, '\.')[0], '""']
   if index(s:supported, ft) < 0 && !exists('b:docgen')
     echo '[docgen] not supported'
     return
