@@ -19,9 +19,10 @@ let s:ph = '$' . 'PLACEHOLDER'
 ""
 fun! docgen#box(bang, cnt) abort
   " {{{1
-  let [rChar, is_comment] = [s:comment()[3], s:is_comment(line('.'))]
+  let doc = s:new()
+  let [rChar, is_comment] = [doc.get_comment()[3], s:is_comment(line('.'))]
   let indent = matchstr(getline('.'), '^\s*')
-  let lines = s:create_box(s:replace_comment(), a:bang, rChar, a:cnt)
+  let lines = doc.create_box(s:replace_comment(), a:bang, rChar, a:cnt)
   exe 'silent' (is_comment ? '-1': '') . 'put =lines'
 
   call s:reindent_box(lines, indent, rChar)
@@ -82,10 +83,10 @@ fun! docgen#func(bang, count) abort
   let lines = doc.lines.desc + s:align(doc.lines.params) + doc.lines.return
 
   " keep the old lines of the previous docstring, if unchanged
-  let lines = s:preserve_oldlines( lines, s:previous_docstring(startLn, doc.get_putBelow()) )
+  let lines = doc.preserve_oldlines( lines, doc.previous_docstring(startLn, doc.get_putBelow()) )
 
   " align placeholders and create box
-  let lines = s:create_box( lines, doc.get_boxed(), doc.get_frameChar(), 0 )
+  let lines = doc.create_box( lines, doc.get_boxed(), doc.get_frameChar(), 0 )
 
   exe 'silent ' ( doc.get_putBelow() ? '' : '-1' ) . 'put =lines'
   call s:reindent_box(lines, indent, doc.get_frameChar())
@@ -115,9 +116,11 @@ fun! s:new() abort
   "{{{1
   let doc = extend(extend(deepcopy(s:Doc), s:{&filetype}),
         \                 get(b:, 'docgen', {}))
+  " s:Style is static and changes to it persist across instantiations
   let doc.style = s:Style
-  let doc.style.putBelow = doc.get_putBelow()
-  let doc.frameChar = s:comment()[3]
+  " so that s:Style can access the current instance
+  let doc.style.doc = doc
+  let doc.frameChar = doc.get_comment()[3]
   return doc
 endfun "}}}
 
@@ -199,6 +202,10 @@ endfun
 
 fun! s:Doc.get_frameChar() "{{{1
   return s:get('frameChar', self)
+endfun
+
+fun! s:Doc.get_comment() "{{{1
+  return s:get('comment', self)
 endfun
 
 fun! s:Doc.get_putBelow() "{{{1
@@ -387,6 +394,136 @@ fun! s:Doc.retLines() abort
   "{{{1
   return self.get_minimal() ? [] : self.get_rtypeFmt()
 endfun "}}}
+
+
+""
+" Function: s:Doc.comment
+"
+" @return: a list with four elements:
+"          [0]  the opening multiline comment chars
+"          [1]  the chars for lines in between
+"          [2]  the closing multiline comment chars
+"          [3]  a single char used for box frame
+""
+fun! s:Doc.comment()
+  " {{{1
+  let cm = &commentstring =~ '//\s*%s' ? '/*%s*/' : &commentstring
+  let c = substitute(split(&commentstring, '%s')[0], '\s*$', '', '')
+  return cm == '/*%s*/' ? ['/*', ' *', ' */', '*'] : [c, c, c, trim(c)[:0]]
+endfun "}}}
+
+
+""
+" Function: s:Doc.preserve_oldlines
+" Keep the valid lines of the previous docstring
+"
+" @param lines:    the new lines
+" @param oldlines: the old lines
+" @return: the merged lines
+""
+fun! s:Doc.preserve_oldlines(lines, oldlines) abort
+  " {{{1
+  " here we handle docstring generated lines, not extra edits
+  " we compare the generated lines with the old lines, and we keep the ones
+  " that look similar
+  for l in range(len(a:lines))
+    let line = substitute(a:lines[l], '\V' . s:ph, '', 'g')
+    for ol in a:oldlines
+      if line != '' && ol =~ '^\V' . trim(line)
+        let a:lines[l] = ol
+        break
+      endif
+    endfor
+  endfor
+  " here we handle extra edits, that is lines that have been inserted by the
+  " user and that are not part of the generated docstring
+  for o in range(len(a:oldlines))
+    let ol = a:oldlines[o]
+    " if the old line looks like @param, @rtype, etc, it's been generated and
+    " we've already handled it
+    if ol =~ s:docstring_words(['param', 'return', 'rtype'])
+      continue
+    endif
+    if index(a:lines, ol) < 0
+      call insert(a:lines, ol, o)
+    endif
+  endfor
+  return a:lines
+endfun "}}}
+
+
+""
+" Function: s:Doc.previous_docstring
+"
+" @param start: start line
+" @param below: whether the docstring will be added below the declaration
+" @return: the lines in the docstring before update
+""
+fun! s:Doc.previous_docstring(start, below) abort
+  " {{{1
+  let lines = []
+  let start = a:start
+  let c = self.get_comment()[1]
+  if !a:below
+    while 1
+      if start == 1
+        break
+      elseif match(getline(start - 1), '^\V' . c) == 0
+        call add(lines, getline(start - 1))
+        exe (start - 1) . 'd _'
+        let start -= 1
+      else
+        break
+      endif
+    endwhile
+  else
+    while 1
+      if start == line('$')
+        break
+      elseif match(getline(start + 1), '^\V' . c) == 0
+        call add(lines, getline(start + 1))
+        exe (start + 1) . 'd _'
+        let start += 1
+      else
+        break
+      endif
+    endwhile
+  endif
+  call map(lines, 'substitute(v:val, "^\\V" . c . " ", "", "")')
+  return reverse(filter(lines, 'v:val =~ "\\k"'))
+endfun "}}}
+
+
+""
+" Function: s:Doc.create_box
+" Create a box with the docstring
+"
+" @param lines: the docstring lines
+" @param boxed: with full frame or not
+" @param rchar: character used for full frame
+" @param extraHeight: additional empty lines near the edges
+" @return: the box lines
+""
+fun! s:Doc.create_box(lines, boxed, rchar, extraHeight) abort
+  " {{{1
+  let [a, m, b, _] = self.get_comment()
+  let rwidth = &tw ? &tw : 79
+  if a:boxed && a != b
+    let box1 = a . repeat(a:rchar, rwidth - strlen(a))
+    let box2 = ' ' . repeat(a:rchar, rwidth - strlen(a) - 1) . trim(b)
+  elseif a:boxed
+    let box1 = m . repeat(a:rchar, rwidth - strlen(a))
+    let box2 = box1
+  else
+    let box1 = a . trim(m)
+    let box2 = m . trim(b)
+  endif
+  let extra = map(range(a:extraHeight), { k,v -> m })
+  call map(a:lines, 'v:val == "" || v:val == m ?'.
+        \           '(v:val . m) : (m . " " . v:val)')
+  return [box1] + extra + a:lines + extra + [box2]
+endfun "}}}
+
 
 
 
@@ -601,11 +738,17 @@ endfun "}}}
 " Helpers
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+""
+" s:is_comment: whether the line is a comment or not.
+""
 fun! s:is_comment(line) abort
   "{{{1
   return synIDattr(synID(a:line, indent(a:line) + 1, 1), "name") =~? 'comment'
 endfun "}}}
 
+""
+" s:bdoc: get the buffer variable if defined.
+""
 fun! s:bdoc()
   " {{{1
   return get(b:, 'docgen', {})
@@ -620,100 +763,6 @@ fun! s:docstring_words(words) abort
   let wordPatterns = map(a:words, { k,v -> '.\?' . v . ' ' })
   " join word patterns and make them optional
   return '^\%(' . join(wordPatterns, '\|') . '\)\?\S\+:'
-endfun "}}}
-
-""
-" s:comment
-"
-" @return: a list with four elements:
-"          [0]  the opening multiline comment chars
-"          [1]  the chars for lines in between
-"          [2]  the closing multiline comment chars
-"          [3]  a single char used for box frame
-""
-fun! s:comment()
-  " {{{1
-  let cm = &commentstring =~ '//\s*%s' ? '/*%s*/' : &commentstring
-  let c = substitute(split(&commentstring, '%s')[0], '\s*$', '', '')
-  return cm == '/*%s*/' ? ['/*', ' *', ' */', '*'] : [c, c, c, trim(c)[:0]]
-endfun "}}}
-
-""
-" s:preserve_oldlines: keep the valid lines of the previous docstring
-"
-" @param lines:    the new lines
-" @param oldlines: the old lines
-" @return: the merged lines
-""
-fun! s:preserve_oldlines(lines, oldlines) abort
-  " {{{1
-  " here we handle docstring generated lines, not extra edits
-  " we compare the generated lines with the old lines, and we keep the ones
-  " that look similar
-  for l in range(len(a:lines))
-    let line = substitute(a:lines[l], '\V' . s:ph, '', 'g')
-    for ol in a:oldlines
-      if line != '' && ol =~ '^\V' . trim(line)
-        let a:lines[l] = ol
-        break
-      endif
-    endfor
-  endfor
-  " here we handle extra edits, that is lines that have been inserted by the
-  " user and that are not part of the generated docstring
-  for o in range(len(a:oldlines))
-    let ol = a:oldlines[o]
-    " if the old line looks like @param, @rtype, etc, it's been generated and
-    " we've already handled it
-    if ol =~ s:docstring_words(['param', 'return', 'rtype'])
-      continue
-    endif
-    if index(a:lines, ol) < 0
-      call insert(a:lines, ol, o)
-    endif
-  endfor
-  return a:lines
-endfun "}}}
-
-""
-" s:previous_docstring
-"
-" @param start: start line
-" @param below: whether the docstring will be added below the declaration
-" @return: the lines in the docstring before update
-""
-fun! s:previous_docstring(start, below) abort
-  " {{{1
-  let lines = []
-  let start = a:start
-  let c = s:comment()[1]
-  if !a:below
-    while 1
-      if start == 1
-        break
-      elseif match(getline(start - 1), '^\V' . c) == 0
-        call add(lines, getline(start - 1))
-        exe (start - 1) . 'd _'
-        let start -= 1
-      else
-        break
-      endif
-    endwhile
-  else
-    while 1
-      if start == line('$')
-        break
-      elseif match(getline(start + 1), '^\V' . c) == 0
-        call add(lines, getline(start + 1))
-        exe (start + 1) . 'd _'
-        let start += 1
-      else
-        break
-      endif
-    endwhile
-  endif
-  call map(lines, 'substitute(v:val, "^\\V" . c . " ", "", "")')
-  return reverse(filter(lines, 'v:val =~ "\\k"'))
 endfun "}}}
 
 ""
@@ -770,34 +819,6 @@ fun! s:replace_comment() abort
     let lines = ['']
   endif
   return lines
-endfun "}}}
-
-""
-" s:create_box: create a box with the docstring
-
-" @param lines: the docstring lines
-" @param boxed: with full frame or not
-" @param rchar: character used for full frame
-" @return: the box lines
-""
-fun! s:create_box(lines, boxed, rchar, extraHeight) abort
-  " {{{1
-  let [a, m, b, _] = s:comment()
-  let rwidth = &tw ? &tw : 79
-  if a:boxed && a != b
-    let box1 = a . repeat(a:rchar, rwidth - strlen(a))
-    let box2 = ' ' . repeat(a:rchar, rwidth - strlen(a) - 1) . trim(b)
-  elseif a:boxed
-    let box1 = m . repeat(a:rchar, rwidth - strlen(a))
-    let box2 = box1
-  else
-    let box1 = a . trim(m)
-    let box2 = m . trim(b)
-  endif
-  let extra = map(range(a:extraHeight), { k,v -> m })
-  call map(a:lines, 'v:val == "" || v:val == m ?'.
-        \           '(v:val . m) : (m . " " . v:val)')
-  return [box1] + extra + a:lines + extra + [box2]
 endfun "}}}
 
 ""
