@@ -19,15 +19,14 @@ let s:ph = '$' . 'PLACEHOLDER'
 ""
 fun! docgen#box(bang) abort
   " {{{1
+  let @= = ''
   let lines = s:create_box(s:replace_comment(), a:bang)
   silent -1put =lines
 
   call s:reindent_box(lines, s:comment()[3])
   normal! `[j
   " could be a converted comment
-  if getline('.') !~ '\w'
-    call feedkeys('A ', 'n')
-  endif
+  let @= = getline('.') !~ '\w' ? '"A"' : ''
 endfun "}}}
 
 
@@ -38,6 +37,7 @@ endfun "}}}
 ""
 fun! docgen#func(bang, count) abort
   " {{{1
+  let @= = ''
   let ft = split(&filetype, '\.')[0]
   if index(s:supported, ft) < 0 && !exists('b:docgen')
     echo '[docgen] not supported'
@@ -90,7 +90,7 @@ fun! docgen#func(bang, count) abort
   normal! {
   if search(s:ph, '', startLn + len(lines))
     let @/ = s:ph
-    call feedkeys('"_cgn', 'n')
+    let @= = '''"_cgn'''
   else
     exe startLn
   endif

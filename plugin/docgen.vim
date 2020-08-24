@@ -20,10 +20,10 @@ let g:loaded_docgen = 1
 " COMMANDS AND MAPPINGS {{{1
 
 if get(g:, 'docgen_mappings', 1)
-  nnoremap <silent> ,d :<C-u>DocFun <C-r>=v:count?v:count:''<CR><cr>
+  nnoremap <silent> ,d :<C-U>call docgen#func(0,v:count?v:count:'')<cr>@=<cr>
   nnoremap <silent> ,D :<C-u>DocFun! <C-r>=v:count?v:count:''<CR><cr>
-  nnoremap <silent> ,x :<C-u>DocBox<cr>
-  nnoremap <silent> ,X :<C-u>DocBox!<cr>
+  nnoremap <silent> ,x :<C-U>call docgen#box(0)<cr>@=<cr>
+  nnoremap <silent> ,X :<C-U>call docgen#box(1)<cr>@=<cr>
 endif
 
 command! -count -bang DocFun call docgen#func(<bang>0, <count>)
