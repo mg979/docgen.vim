@@ -13,21 +13,21 @@ let s:ph = '$' . 'PLACEHOLDER'
 
 
 ""
-" docgen#box: create a comment box
+" docgen#box: create a comment box, or convert an existing comment to a box
 " @param bang: with full length frame
 " @param cnt:  extra height of the box, both above and below
 ""
 fun! docgen#box(bang, cnt) abort
   " {{{1
-  let rChar = s:comment()[3]
+  let [rChar, is_comment] = [s:comment()[3], s:is_comment(line('.'))]
   let lines = s:create_box(s:replace_comment(), a:bang, rChar, a:cnt)
-  silent put =lines
+  exe 'silent' (is_comment ? '-1': '') . 'put =lines'
 
   call s:reindent_box(lines, rChar)
   normal! `[
   exe 'normal!' (a:cnt + 1) . 'j'
   " could be a converted comment
-  let @= = getline('.') !~ '\w' ? '"A"' : '""'
+  let @= = is_comment ? '""' : '"A"'
 endfun "}}}
 
 
