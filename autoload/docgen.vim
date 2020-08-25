@@ -20,12 +20,11 @@ let s:ph = '$' . 'PLACEHOLDER'
 fun! docgen#box(bang, cnt) abort
   " {{{1
   let doc = s:new()
-  let [rChar, is_comment] = [doc.get_comment()[3], s:is_comment(line('.'))]
-  let indent = matchstr(getline('.'), '^\s*')
-  let lines = doc.create_box(s:replace_comment(), a:bang, rChar, a:cnt)
+  let is_comment = s:is_comment(line('.'))
+  let lines = doc.create_box(s:replace_comment(), a:bang, a:cnt)
   exe 'silent' (is_comment ? '-1': '') . 'put =lines'
 
-  call s:reindent_box(lines, indent, rChar)
+  call doc.reindent_box(lines)
   normal! `[
   exe 'normal!' (a:cnt + 1) . 'j'
   " could be a converted comment
@@ -74,9 +73,6 @@ fun! docgen#func(bang, count) abort
   " move to the line with the function declaration
   exe startLn
 
-  " get the indent for the docstring
-  let indent = matchstr(getline(doc.get_putBelow() ? startLn + 1 : startLn), '^\s*')
-
   " process params and return first, if absent the comment will be trimmed
   let doc.lines.params = doc.paramsLines()
   let doc.lines.return = doc.retLines()
@@ -88,10 +84,10 @@ fun! docgen#func(bang, count) abort
   let lines = doc.preserve_oldlines( lines, doc.previous_docstring(startLn, doc.get_putBelow()) )
 
   " align placeholders and create box
-  let lines = doc.create_box( lines, doc.get_boxed(), doc.get_frameChar(), 0 )
+  let lines = doc.create_box( lines, doc.get_boxed(), 0 )
 
   exe 'silent ' ( doc.get_putBelow() ? '' : '-1' ) . 'put =lines'
-  call s:reindent_box(lines, indent, doc.get_frameChar())
+  call doc.reindent_box(lines)
 
   " edit first placeholder, or go back to starting line if none is found
   normal! {
@@ -503,15 +499,16 @@ endfun "}}}
 " @param extraHeight: additional empty lines near the edges
 " @return: the box lines
 ""
-fun! s:Doc.create_box(lines, boxed, rchar, extraHeight) abort
+fun! s:Doc.create_box(lines, boxed, extraHeight) abort
   " {{{1
   let [a, m, b, _] = self.get_comment()
+  let rchar = self.get_comment()[3]
   let rwidth = &tw ? &tw : 79
   if a:boxed && a != b
-    let box1 = a . repeat(a:rchar, rwidth - strlen(a))
-    let box2 = ' ' . repeat(a:rchar, rwidth - strlen(a) - 1) . trim(b)
+    let box1 = a . repeat(rchar, rwidth - strlen(a))
+    let box2 = ' ' . repeat(rchar, rwidth - strlen(a) - 1) . trim(b)
   elseif a:boxed
-    let box1 = m . repeat(a:rchar, rwidth - strlen(a))
+    let box1 = m . repeat(rchar, rwidth - strlen(a))
     let box2 = box1
   else
     let box1 = a . trim(m)
@@ -523,6 +520,29 @@ fun! s:Doc.create_box(lines, boxed, rchar, extraHeight) abort
   return [box1] + extra + a:lines + extra + [box2]
 endfun "}}}
 
+
+""
+" Function: s:Doc.reindent_box
+"
+" @param lines: the lines to reindent
+""
+fun! s:Doc.reindent_box(lines) abort
+  "{{{1
+  silent keepjumps normal! `[=`]
+  let ind = matchstr(getline('.'), '^\s*')
+  let lines = map(a:lines, "substitute(v:val, '^\s*', ind, '')")
+  let frameChar = self.comment()[3]
+  let i = line('.')
+  let maxw = &tw ? &tw : 79
+  for line in lines
+    if strlen(line) > maxw
+      let removeChars = printf('\V%s\{%s}', frameChar, strlen(line) - maxw)
+      let line = substitute(line, removeChars, '', '')
+    endif
+    call setline(i, line)
+    let i += 1
+  endfor
+endfun "}}}
 
 
 
@@ -826,28 +846,6 @@ fun! s:replace_comment() abort
     let lines = ['']
   endif
   return lines
-endfun "}}}
-
-""
-" s:reindent_box
-"
-" @param lines:     the lines to reindent
-" @param frameChar: the character used for the frame
-""
-fun! s:reindent_box(lines, indent, frameChar) abort
-  "{{{1
-  silent keepjumps normal! `[=`]
-  let i = line('.')
-  call map(a:lines, 'substitute(v:val, "^\s*", a:indent, "")')
-  for line in a:lines
-    let maxw = &tw ? &tw : 79
-    if strlen(line) > maxw
-      let removeChars = printf('\V%s\{%s}', a:frameChar, strlen(line) - maxw)
-      let line = substitute(line, removeChars, '', '')
-    endif
-    call setline(i, line)
-    let i += 1
-  endfor
 endfun "}}}
 
 " vim: et sw=2 ts=2 sts=2 fdm=marker tags=tags
