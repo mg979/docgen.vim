@@ -20,8 +20,8 @@ let s:ph = '$' . 'PLACEHOLDER'
 fun! docgen#box(bang, cnt) abort
   " {{{1
   let doc = s:new()
-  let is_comment = s:is_comment(line('.'))
-  let lines = doc.create_box(s:replace_comment(), a:bang, a:cnt)
+  let is_comment = doc.is_comment(line('.'))
+  let lines = doc.create_box(doc.replace_comment(), a:bang, a:cnt)
   exe 'silent' (is_comment ? '-1': '') . 'put =lines'
 
   call doc.reindent_box(lines)
@@ -272,6 +272,7 @@ fun! s:Doc.parse(where) abort
   return a:where
 endfun "}}}
 
+
 ""
 " Function: s:Doc.search_function
 " Search the closest function declaration upwards, if it can be found set the
@@ -293,6 +294,7 @@ fun! s:Doc.search_function() abort
   return startLn
 endfun "}}}
 
+
 ""
 " Function: s:Doc.format_parsers
 " Build the parsers with printf(), replacing the placeholders with the specific
@@ -312,6 +314,7 @@ fun! s:Doc.format_parsers() abort
   return pats
 endfun "}}}
 
+
 ""
 " Function: s:Doc.ordered_patterns
 "
@@ -325,6 +328,7 @@ fun! s:Doc.ordered_patterns() abort
         \  eval('self.get_'.o[2].'Pat()'),
         \  eval('self.get_'.o[3].'Pat()') ]
 endfun "}}}
+
 
 ""
 " Function: s:Doc.descLines
@@ -347,6 +351,7 @@ fun! s:Doc.descLines() abort
   endif
 endfun "}}}
 
+
 ""
 " Function: s:Doc.paramsParse
 " Parse the parameters string, remove unwanted parts, and return a list with
@@ -360,6 +365,7 @@ fun! s:Doc.paramsParse() abort
   let params = substitute(params, '\s*=\s*[^,]\+', '', 'g')
   return split(params, ',')
 endfun "}}}
+
 
 ""
 " Function: s:Doc.paramsLines
@@ -379,6 +385,7 @@ fun! s:Doc.paramsLines() abort
   endfor
   return lines
 endfun "}}}
+
 
 ""
 " Function: s:Doc.retLines
@@ -458,12 +465,11 @@ fun! s:Doc.previous_docstring(start, below) abort
   " {{{1
   let lines = []
   let start = a:start
-  let c = self.get_comment()[1]
   if !a:below
     while 1
       if start == 1
         break
-      elseif match(getline(start - 1), '^\V' . c) == 0
+      elseif self.is_comment(start - 1)
         call add(lines, getline(start - 1))
         exe (start - 1) . 'd _'
         let start -= 1
@@ -475,7 +481,7 @@ fun! s:Doc.previous_docstring(start, below) abort
     while 1
       if start == line('$')
         break
-      elseif match(getline(start + 1), '^\V' . c) == 0
+      elseif self.is_comment(start + 1)
         call add(lines, getline(start + 1))
         exe (start + 1) . 'd _'
         let start += 1
@@ -484,6 +490,7 @@ fun! s:Doc.previous_docstring(start, below) abort
       endif
     endwhile
   endif
+  let c = self.get_comment()[1]
   call map(lines, 'substitute(v:val, "^\\V" . c . " ", "", "")')
   return reverse(filter(lines, 'v:val =~ "\\k"'))
 endfun "}}}
@@ -515,8 +522,13 @@ fun! s:Doc.create_box(lines, boxed, extraHeight) abort
     let box2 = m . trim(b)
   endif
   let extra = map(range(a:extraHeight), { k,v -> m })
-  call map(a:lines, 'v:val == "" || v:val == m ?'.
-        \           '(v:val . m) : (m . " " . v:val)')
+  ""
+  " Reformat the lines as comment. Top and bottom lines are not handled here.
+  "   - empty line ? comment char(s)
+  "   - no comment char(s) (eg. python docstrings)? just the line
+  "   - both? concatenate comment chars and line, with a space in between
+  ""
+  call map(a:lines, 'v:val == "" ? m : m == "" ? v:val : (m . " " . v:val)')
   return [box1] + extra + a:lines + extra + [box2]
 endfun "}}}
 
@@ -531,7 +543,7 @@ fun! s:Doc.reindent_box(lines) abort
   silent keepjumps normal! `[=`]
   let ind = matchstr(getline('.'), '^\s*')
   let lines = map(a:lines, "substitute(v:val, '^\s*', ind, '')")
-  let frameChar = self.comment()[3]
+  let frameChar = self.get_comment()[3]
   let i = line('.')
   let maxw = &tw ? &tw : 79
   for line in lines
@@ -542,6 +554,52 @@ fun! s:Doc.reindent_box(lines) abort
     call setline(i, line)
     let i += 1
   endfor
+endfun "}}}
+
+
+""
+" Function: s:Doc.is_comment
+"
+" @param line: the line to evaluate
+" @return: if the evaluated line is a comment (or a docstring)
+""
+fun! s:Doc.is_comment(line) abort
+  "{{{1
+  return synIDattr(synID(a:line, indent(a:line) + 1, 1), "name") =~? 'comment'
+endfun "}}}
+
+
+""
+" Function: s:Doc.replace_comment
+" Replace previous docstring with the new one.
+"
+" @return: the removed lines, if not empty
+""
+fun! s:Doc.replace_comment() abort
+  "{{{1
+  let startLn = 0
+  if self.is_comment(line('.'))
+    let [startLn, endLn] = [line('.'), line('.')]
+    while self.is_comment(startLn - 1)
+      let startLn -= 1
+    endwhile
+    while self.is_comment(endLn + 1)
+      let endLn += 1
+    endwhile
+    let lines = getline(startLn, endLn)
+    " strip the previous comment chars
+    call map(lines, { k,v -> substitute(v, '^\s*[[:punct:]]\+\s*', '', '') })
+    if empty(lines[0])
+      call remove(lines, 0)
+    endif
+    if empty(lines[-1])
+      call remove(lines, -1)
+    endif
+    exe startLn . ',' . endLn . 'd _'
+  else
+    let lines = ['']
+  endif
+  return lines
 endfun "}}}
 
 
@@ -679,6 +737,7 @@ let s:python = {
       \ 'parsers': ['^\s*%s%s%s%s:'],
       \ 'typePat': '\(class\|def\)\s*',
       \ 'putBelow': 1,
+      \ 'comment': ['"""', '', '"""', '"'],
       \ 'jollyChar': ':',
       \}
 
@@ -687,6 +746,10 @@ fun! s:python.rtypeFmt() abort
   let rtype = substitute(self.funcRtype, '\s*->\s*', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
   return ['return: ' . rtype . ' ' . s:ph]
+endfun
+
+fun! s:python.is_comment(line) abort
+  return synIDattr(synID(a:line, indent(a:line) + 1, 1), "name") =~? 'comment\>\|string\>'
 endfun
 
 fun! s:python.paramsParse() abort
@@ -766,14 +829,6 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 ""
-" s:is_comment: whether the line is a comment or not.
-""
-fun! s:is_comment(line) abort
-  "{{{1
-  return synIDattr(synID(a:line, indent(a:line) + 1, 1), "name") =~? 'comment'
-endfun "}}}
-
-""
 " s:bdoc: get the buffer variable if defined.
 ""
 fun! s:bdoc()
@@ -814,38 +869,6 @@ fun! s:align(lines, ...) abort
     endif
   endfor
   return a:lines
-endfun "}}}
-
-""
-" s:replace_comment: replace previous docstring with the new one.
-"
-" @return: the removed lines, if not empty
-""
-fun! s:replace_comment() abort
-  "{{{1
-  let startLn = 0
-  if s:is_comment(line('.'))
-    let [startLn, endLn] = [line('.'), line('.')]
-    while s:is_comment(startLn - 1)
-      let startLn -= 1
-    endwhile
-    while s:is_comment(endLn + 1)
-      let endLn += 1
-    endwhile
-    let lines = getline(startLn, endLn)
-    " strip the previous comment chars
-    call map(lines, { k,v -> substitute(v, '^\s*[[:punct:]]\+\s*', '', '') })
-    if empty(lines[0])
-      call remove(lines, 0)
-    endif
-    if empty(lines[-1])
-      call remove(lines, -1)
-    endif
-    exe startLn . ',' . endLn . 'd _'
-  else
-    let lines = ['']
-  endif
-  return lines
 endfun "}}}
 
 " vim: et sw=2 ts=2 sts=2 fdm=marker tags=tags
