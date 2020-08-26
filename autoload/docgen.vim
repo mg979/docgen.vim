@@ -112,8 +112,7 @@ endfun "}}}
 ""
 fun! s:new() abort
   "{{{1
-  let doc = extend(extend(deepcopy(s:Doc), s:{&filetype}),
-        \                 get(b:, 'docgen', {}))
+  let doc = extend(extend(deepcopy(s:Doc), s:{&filetype}), s:bdoc())
   " s:Style is static and changes to it persist across instantiations
   let doc.style = s:Style
   " so that s:Style can access the current instance
@@ -173,11 +172,13 @@ fun! s:Doc.header()
 endfun "}}}
 
 fun! s:Doc.boxed()
-  return self.style.get_current() == 'boxed' " {{{1
+  " {{{1
+  return self.style.get_style() == 'boxed'
 endfun "}}}
 
 fun! s:Doc.minimal()
-  return self.style.get_current() == 'minimal' " {{{1
+  " {{{1
+  return self.style.get_style() == 'minimal'
 endfun "}}}
 
 fun! s:Doc.below()
@@ -579,22 +580,24 @@ endfun "}}}
 
 let s:Style = {
       \   'list': ['nonboxed', 'boxed', 'simple', 'minimal'],
-      \   'current': 0,
       \  }
 
 ""
 " s:Style.change
-" @param ...: change to given index
+" @param ...: change style to given index
 ""
 fun! s:Style.change(...) abort
   "{{{1
+  let ft = s:{&filetype}
   if a:0
-    let self.current = a:1 - 1
-  endif
-  if self.current >= len(self.get_list()) - 1
-    let self.current = 0
+    let ft.current = a:1 - 1
   else
-    let self.current += 1
+    let ft.current = self.get_current()
+  endif
+  if ft.current >= len(self.get_list()) - 1
+    let ft.current = 0
+  else
+    let ft.current += 1
   endif
   call self.apply(1)
 endfun "}}}
@@ -609,23 +612,31 @@ endfun "}}}
 fun! s:Style.apply(...) abort
   "{{{1
   let fmt = self.doc.nameFmt()
-  let self._nameFmt = type(fmt) == v:t_dict ? fmt[self.get_current()] : fmt
+  let self._header = type(fmt) == v:t_dict ? fmt[self.get_style()] : fmt
   if a:0
     let blw = self.doc.below() ? '[below]' : ''
-    echo '[docgen] current style:' self.get_current() blw
+    echo '[docgen] current style:' self.get_style() blw
   endif
 endfun "}}}
 
 ""
-" s:Style.current: return currently active style
+" s:Style.get_style: currently active style for filetype
 ""
-fun! s:Style.get_current() abort
+fun! s:Style.get_style() abort
   "{{{1
-  return self.get_list()[self.current]
+  return self.get_list()[self.get_current()]
 endfun "}}}
 
 ""
-" s:Style.list: return current styles list
+" s:Style.get_current: current index in the styles list
+""
+fun! s:Style.get_current() abort
+  "{{{1
+  return get(s:bdoc(), 'current', get(s:{&filetype}, 'current', 0))
+endfun "}}}
+
+""
+" s:Style.get_list: currently active styles list
 ""
 fun! s:Style.get_list() abort
   "{{{1
@@ -668,8 +679,8 @@ let s:lua = {
 
 "{{{1
 fun! s:lua.descLines() abort
-  let style     = self.style.get_current()
-  let oneline   = empty(self.lines.params) && empty(self.lines.return)
+  let style   = self.style.get_style()
+  let oneline = empty(self.lines.params) && empty(self.lines.return)
 
   return style == 'minimal' || style == 'simple' || oneline ?
         \ [self.funcName] : [self.funcName, '']
