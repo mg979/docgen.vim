@@ -57,7 +57,7 @@ fun! docgen#func(bang, count) abort
     else
       " we set the filetype variable, so that this setting persits only for
       " files of the same type
-      let s:{&filetype}.putBelow = !doc.get_putBelow()
+      let s:{&filetype}.putBelow = !doc.below()
       call doc.style.apply(1)
     endif
     return
@@ -81,12 +81,12 @@ fun! docgen#func(bang, count) abort
   let lines = doc.lines.desc + s:align(doc.lines.params) + doc.lines.return
 
   " keep the old lines of the previous docstring, if unchanged
-  let lines = doc.preserve_oldlines( lines, doc.previous_docstring(startLn, doc.get_putBelow()) )
+  let lines = doc.preserve_oldlines( lines, doc.previous_docstring(startLn, doc.below()) )
 
   " align placeholders and create box
-  let lines = doc.create_box( lines, doc.get_boxed(), 0 )
+  let lines = doc.create_box( lines, doc.boxed(), 0 )
 
-  exe 'silent ' ( doc.get_putBelow() ? '' : '-1' ) . 'put =lines'
+  exe 'silent ' ( doc.below() ? '' : '-1' ) . 'put =lines'
   call doc.reindent_box(lines)
 
   " edit first placeholder, or go back to starting line if none is found
@@ -103,7 +103,7 @@ endfun "}}}
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Formatter initializer
+" Docstring formatter initializer
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 ""
@@ -118,11 +118,17 @@ fun! s:new() abort
   let doc.style = s:Style
   " so that s:Style can access the current instance
   let doc.style.doc = doc
-  let doc.frameChar = doc.get_comment()[3]
+  let doc.frameChar = doc.comment()[3]
   return doc
 endfun "}}}
 
 let s:Doc = {'lines': {}}
+
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Docstring formatter patterns
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 " default formatters for docstring lines
 let s:Doc.nameFmt   = { -> {
@@ -132,8 +138,15 @@ let s:Doc.nameFmt   = { -> {
       \ 'minimal':  ['%s:' . s:ph, ''],
       \} }
 
-let s:Doc.paramsFmt = { -> ['param %s: ' . s:ph] }
-let s:Doc.rtypeFmt  = { -> ['return: ' . s:ph] }
+fun! s:Doc.paramsFmt()
+  " {{{1
+  return map(['param %s: ' . s:ph], { k,v -> v =~ '^param' ? self.jollyChar() . v : v })
+endfun "}}}
+
+fun! s:Doc.rtypeFmt()
+  " {{{1
+  return map(['return: ' . s:ph], { k,v -> v =~ '^r' ? self.jollyChar() . v : v })
+endfun "}}}
 
 " default patterns for function name, parameters, pre and post
 let s:Doc.typePat   = { -> '\(\)' }
@@ -144,128 +157,54 @@ let s:Doc.rtypePat  = { -> '\s*\(.*\)\?' }
 " default order for patterns, and the group they match in matchlist()
 let s:Doc.order     = { -> ['type', 'name', 'params', 'rtype'] }
 
+
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Docstring formatter styles
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
 let s:Doc.boxed     = { -> 0 }
 let s:Doc.minimal   = { -> 0 }
 let s:Doc.putBelow  = { -> 0 }
 let s:Doc.jollyChar = { -> '@' }
 
-
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Getters
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-
-" getters that prefer b:docgen -> s:{&filetype} -> default
-
-fun! s:get(what, doc, ...)
-  "{{{1
-  let a:doc[a:what] = get(s:bdoc(), a:what, get(s:{&filetype}, a:what, a:0 ? a:1 : a:doc[a:what]))
-  return type(a:doc[a:what]) == v:t_func ? a:doc[a:what]() : a:doc[a:what]
+fun! s:Doc.header()
+  return self.style._nameFmt " {{{1
 endfun "}}}
 
-fun! s:Doc.get_parsers() "{{{1
-  return s:get('parsers', self)
-endfun
+fun! s:Doc.boxed()
+  return self.style.get_current() == 'boxed' " {{{1
+endfun "}}}
 
-fun! s:Doc.get_nameFmt() "{{{1
-  return self.style._nameFmt
-endfun
+fun! s:Doc.minimal()
+  return self.style.get_current() == 'minimal' " {{{1
+endfun "}}}
 
-fun! s:Doc.get_paramsFmt() "{{{1
-  return map(s:get('paramsFmt', self), { k,v -> v =~ '^param' ? self.jollyChar() . v : v })
-endfun
-
-fun! s:Doc.get_paramsParse() "{{{1
-  return s:get('paramsParse', self)
-endfun
-
-fun! s:Doc.get_rtypeFmt() "{{{1
-  return map(s:get('rtypeFmt', self), { k,v -> v =~ '^r' ? self.jollyChar() . v : v })
-endfun
-
-fun! s:Doc.get_typePat() "{{{1
-  return s:get('typePat', self)
-endfun
-
-fun! s:Doc.get_namePat() "{{{1
-  return s:get('namePat', self)
-endfun
-
-fun! s:Doc.get_paramsPat() "{{{1
-  return s:get('paramsPat', self)
-endfun
-
-fun! s:Doc.get_rtypePat() "{{{1
-  return s:get('rtypePat', self)
-endfun
-
-fun! s:Doc.get_frameChar() "{{{1
-  return s:get('frameChar', self)
-endfun
-
-fun! s:Doc.get_comment() "{{{1
-  return s:get('comment', self)
-endfun
-
-fun! s:Doc.get_putBelow() "{{{1
+fun! s:Doc.below()
+  " return putBelow {{{1
   return s:get('putBelow', self)
-endfun
-
-fun! s:Doc.get_jollyChar() "{{{1
-  return s:get('jollyChar', self)
-endfun
-
-fun! s:Doc.get_boxed() "{{{1
-  return self.style.get_current() == 'boxed'
-endfun
-
-fun! s:Doc.get_minimal() "{{{1
-  return self.style.get_current() == 'minimal'
-endfun
-
-fun! s:Doc.get_order() "{{{1
-  return s:get('order', self)
-endfun
-
-fun! s:Doc.get_groups() abort "{{{1
-  ""
-  " The parser creates a list of matches based on the different subpatterns.
-  " These subpatterns have a specific order, depending on the filetype.
-  " Once the list of matches is created, the groups must be assigned to the right
-  " variable, that depends on the position in the order.
-  " For example, if 'type' comes first in the order, funcType must be the
-  " variable that is assigned to the first matched group.
-  "
-  " @return: the groups that must be matched my matchlist()
-  ""
-  let o = self.get_order()
-  return s:get('groups', self, filter([
-        \ index(o, 'type'),
-        \ index(o, 'name'),
-        \ index(o, 'params'),
-        \ index(o, 'rtype'),
-        \], 'v:val != -1'))
 endfun "}}}
 
 
 
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Formatter methods
+" Docstring formatter methods
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 ""
 " Function: s:Doc.parse
 " Parse the function declaration and get its name, parameters and return type.
 "
-" @param where: the line number with the function declaration, if found
-" @return:      the line number with the function declaration
+" @return: the line number with the function declaration
 ""
-fun! s:Doc.parse(where) abort
+fun! s:Doc.parse() abort
   "{{{1
   let startLn = self.search_target()
   if !startLn
     return 0
   endif
-  let [g1, g2, g3, g4] = self.get_groups()
+  let [g1, g2, g3, g4] = self.groups()
   let all  = matchlist(getline(startLn), self.pattern)[1:]
   let self.funcType    = trim(all[g1])
   let self.funcName    = trim(all[g2])
@@ -298,6 +237,30 @@ endfun "}}}
 
 
 ""
+" Function: s:Doc.groups
+"
+" The parser creates a list of matches based on the different subpatterns.
+" These subpatterns have a specific order, depending on the filetype.
+" Once the list of matches is created, the groups must be assigned to the right
+" variable, that depends on the position in the order.
+" For example, if 'type' comes first in the order, funcType must be the
+" variable that is assigned to the first matched group.
+"
+" @return: the groups that must be matched my matchlist()
+""
+fun! s:Doc.groups() abort
+  "{{{1
+  let o = self.order()
+  return filter([
+        \ index(o, 'type'),
+        \ index(o, 'name'),
+        \ index(o, 'params'),
+        \ index(o, 'rtype'),
+        \], 'v:val != -1')
+endfun "}}}
+
+
+""
 " Function: s:Doc.format_parsers
 " Build the parsers with printf(), replacing the placeholders with the specific
 " patterns for the current filetype.
@@ -308,7 +271,7 @@ fun! s:Doc.format_parsers() abort
   "{{{1
   let d = self
   let pats = []
-  let parsers = d.get_parsers()
+  let parsers = d.parsers()
   let [p1, p2, p3, p4] = self.ordered_patterns()
   for p in range(len(parsers))
     call add(pats, printf(parsers[p], p1, p2, p3, p4))
@@ -324,11 +287,11 @@ endfun "}}}
 ""
 fun! s:Doc.ordered_patterns() abort
   "{{{1
-  let o = self.get_order()
-  return [ eval('self.get_'.o[0].'Pat()'),
-        \  eval('self.get_'.o[1].'Pat()'),
-        \  eval('self.get_'.o[2].'Pat()'),
-        \  eval('self.get_'.o[3].'Pat()') ]
+  let o = self.order()
+  return [ eval('self.'.o[0].'Pat()'),
+        \  eval('self.'.o[1].'Pat()'),
+        \  eval('self.'.o[2].'Pat()'),
+        \  eval('self.'.o[3].'Pat()') ]
 endfun "}}}
 
 
@@ -339,7 +302,7 @@ endfun "}}}
 ""
 fun! s:Doc.descLines() abort
   "{{{1
-  let fmt = copy(self.get_nameFmt())
+  let fmt = copy(self.header())
 
   let linesWithName = filter(copy(fmt), 'v:val =~ "%s"')
   if empty(linesWithName) | return fmt | endif
@@ -376,12 +339,12 @@ endfun "}}}
 ""
 fun! s:Doc.paramsLines() abort
   "{{{1
-  if empty(self.get_paramsFmt()) || self.get_minimal()
+  if empty(self.paramsFmt()) || self.minimal()
     return []
   endif
   let lines = []
   for par in self.paramsParse()
-    for line in self.get_paramsFmt()
+    for line in self.paramsFmt()
       call add(lines, line =~ '%s' ? printf(line, trim(par)) : line)
     endfor
   endfor
@@ -396,7 +359,7 @@ endfun "}}}
 ""
 fun! s:Doc.retLines() abort
   "{{{1
-  return self.get_minimal() ? [] : self.get_rtypeFmt()
+  return self.minimal() ? [] : self.rtypeFmt()
 endfun "}}}
 
 
@@ -492,7 +455,7 @@ fun! s:Doc.previous_docstring(start, below) abort
       endif
     endwhile
   endif
-  let c = self.get_comment()[1]
+  let c = self.comment()[1]
   call map(lines, 'substitute(v:val, "^\\V" . c . " ", "", "")')
   return reverse(filter(lines, 'v:val =~ "\\k"'))
 endfun "}}}
@@ -510,8 +473,8 @@ endfun "}}}
 ""
 fun! s:Doc.create_box(lines, boxed, extraHeight) abort
   " {{{1
-  let [a, m, b, _] = self.get_comment()
-  let rchar = self.get_comment()[3]
+  let [a, m, b, _] = self.comment()
+  let rchar = self.comment()[3]
   let rwidth = &tw ? &tw : 79
   if a:boxed && a != b
     let box1 = a . repeat(rchar, rwidth - strlen(a))
@@ -545,7 +508,7 @@ fun! s:Doc.reindent_box(lines) abort
   silent keepjumps normal! `[=`]
   let ind = matchstr(getline('.'), '^\s*')
   let lines = map(a:lines, "substitute(v:val, '^\s*', ind, '')")
-  let frameChar = self.get_comment()[3]
+  let frameChar = self.comment()[3]
   let i = line('.')
   let maxw = &tw ? &tw : 79
   for line in lines
@@ -645,15 +608,16 @@ endfun "}}}
 ""
 fun! s:Style.apply(...) abort
   "{{{1
-  let self._nameFmt = self.doc.nameFmt()[self.get_current()]
+  let fmt = self.doc.nameFmt()
+  let self._nameFmt = type(fmt) == v:t_dict ? fmt[self.get_current()] : fmt
   if a:0
-    let blw = self.doc.get_putBelow() ? '[below]' : ''
+    let blw = self.doc.below() ? '[below]' : ''
     echo '[docgen] current style:' self.get_current() blw
   endif
 endfun "}}}
 
 ""
-" s:Style.get_current: return currently active style
+" s:Style.current: return currently active style
 ""
 fun! s:Style.get_current() abort
   "{{{1
@@ -661,7 +625,7 @@ fun! s:Style.get_current() abort
 endfun "}}}
 
 ""
-" s:Style.get_list: return current styles list
+" s:Style.list: return current styles list
 ""
 fun! s:Style.get_list() abort
   "{{{1
@@ -690,9 +654,9 @@ let s:vim = {
 " don't add the @return line if no meaningful return value
 ""
 fun! s:vim.retLines() abort
-  return self.get_minimal() ? [] :
+  return self.minimal() ? [] :
         \ search('return\s*[[:alnum:]_([{''"]', 'nW', search('^endf', 'nW'))
-        \ ? self.get_rtypeFmt() : []
+        \ ? self.rtypeFmt() : []
 endfun "}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -715,9 +679,9 @@ endfun
 " don't add the @return line if no meaningful return value
 ""
 fun! s:lua.retLines() abort
-  return self.get_minimal() ? [] :
+  return self.minimal() ? [] :
         \ search('return\s*[[:alnum:]_([{''"]', 'nW', search('^end', 'nW'))
-        \ ? self.get_rtypeFmt() : []
+        \ ? self.rtypeFmt() : []
 endfun "}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -742,7 +706,7 @@ fun! s:python.is_comment(line) abort
 endfun
 
 fun! s:python.paramsParse() abort
-  if empty(self.get_paramsFmt()) || self.get_minimal()
+  if empty(self.paramsFmt()) || self.minimal()
     return []
   endif
   let params = substitute(self.funcParams, '\s*=\s*[^,]\+', '', 'g')
@@ -816,6 +780,15 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Helpers
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+""
+" s:get: getter that performs type check, preferring local/filetype options
+""
+fun! s:get(what, doc, ...)
+  "{{{1
+  let a:doc[a:what] = get(s:bdoc(), a:what, get(s:{&filetype}, a:what, a:0 ? a:1 : a:doc[a:what]))
+  return type(a:doc[a:what]) == v:t_func ? a:doc[a:what]() : a:doc[a:what]
+endfun "}}}
 
 ""
 " s:bdoc: get the buffer variable if defined.
