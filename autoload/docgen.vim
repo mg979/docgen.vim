@@ -125,29 +125,29 @@ endfun "}}}
 let s:Doc = {'lines': {}}
 
 " default formatters for docstring lines
-let s:Doc.nameFmt   = {
+let s:Doc.nameFmt   = { -> {
       \ 'boxed':    ['Function: %s' . s:ph, ''],
       \ 'nonboxed': ['Function: %s' . s:ph, ''],
       \ 'simple':   ['%s:' . s:ph],
       \ 'minimal':  ['%s:' . s:ph, ''],
-      \}
+      \} }
 
-let s:Doc.paramsFmt = ['param %s: ' . s:ph]
-let s:Doc.rtypeFmt  = ['return: ' . s:ph]
+let s:Doc.paramsFmt = { -> ['param %s: ' . s:ph] }
+let s:Doc.rtypeFmt  = { -> ['return: ' . s:ph] }
 
 " default patterns for function name, parameters, pre and post
-let s:Doc.typePat   = '\(\)'
-let s:Doc.namePat   = '\s*\([^( \t]\+\)'
-let s:Doc.paramsPat = '\s*(\(.\{-}\))'
-let s:Doc.rtypePat  = '\s*\(.*\)\?'
+let s:Doc.typePat   = { -> '\(\)' }
+let s:Doc.namePat   = { -> '\s*\([^( \t]\+\)' }
+let s:Doc.paramsPat = { -> '\s*(\(.\{-}\))' }
+let s:Doc.rtypePat  = { -> '\s*\(.*\)\?' }
 
 " default order for patterns, and the group they match in matchlist()
-let s:Doc.order     = ['type', 'name', 'params', 'rtype']
+let s:Doc.order     = { -> ['type', 'name', 'params', 'rtype'] }
 
-let s:Doc.boxed     = 0
-let s:Doc.minimal   = 0
-let s:Doc.putBelow  = 0
-let s:Doc.jollyChar = '@'
+let s:Doc.boxed     = { -> 0 }
+let s:Doc.minimal   = { -> 0 }
+let s:Doc.putBelow  = { -> 0 }
+let s:Doc.jollyChar = { -> '@' }
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -171,7 +171,7 @@ fun! s:Doc.get_nameFmt() "{{{1
 endfun
 
 fun! s:Doc.get_paramsFmt() "{{{1
-  return map(s:get('paramsFmt', self), { k,v -> v =~ '^param' ? self.jollyChar . v : v })
+  return map(s:get('paramsFmt', self), { k,v -> v =~ '^param' ? self.jollyChar() . v : v })
 endfun
 
 fun! s:Doc.get_paramsParse() "{{{1
@@ -179,7 +179,7 @@ fun! s:Doc.get_paramsParse() "{{{1
 endfun
 
 fun! s:Doc.get_rtypeFmt() "{{{1
-  return map(s:get('rtypeFmt', self), { k,v -> v =~ '^r' ? self.jollyChar . v : v })
+  return map(s:get('rtypeFmt', self), { k,v -> v =~ '^r' ? self.jollyChar() . v : v })
 endfun
 
 fun! s:Doc.get_typePat() "{{{1
@@ -237,12 +237,13 @@ fun! s:Doc.get_groups() abort "{{{1
   "
   " @return: the groups that must be matched my matchlist()
   ""
-  return s:get('groups', self, [
-        \ index(self.order, 'type'),
-        \ index(self.order, 'name'),
-        \ index(self.order, 'params'),
-        \ index(self.order, 'rtype'),
-        \])
+  let o = self.get_order()
+  return s:get('groups', self, filter([
+        \ index(o, 'type'),
+        \ index(o, 'name'),
+        \ index(o, 'params'),
+        \ index(o, 'rtype'),
+        \], 'v:val != -1'))
 endfun "}}}
 
 
@@ -643,14 +644,10 @@ endfun "}}}
 ""
 fun! s:Style.apply(...) abort
   "{{{1
-  let [ft, current] = [get(b:, 'docgen', s:{&filetype}), self.get_current()]
-
-  let self._nameFmt = has_key(ft, current)         ? ft[current]()
-        \           : !has_key(ft, 'nameFmt')      ? s:Doc.nameFmt[current]
-        \           : type(ft.nameFmt) == v:t_dict ? ft.nameFmt[current]
-        \                                          : ft.nameFmt
+  let self._nameFmt = self.doc.nameFmt()[self.get_current()]
   if a:0
-    call self.echo()
+    let blw = self.doc.get_putBelow() ? '[below]' : ''
+    echo '[docgen] current style:' self.get_current() blw
   endif
 endfun "}}}
 
@@ -670,14 +667,6 @@ fun! s:Style.get_list() abort
   return get(s:bdoc(), 'styles', get(s:{&filetype}, 'styles', self.list))
 endfun "}}}
 
-""
-" s:Style.echo: print current style settings
-""
-fun! s:Style.echo() abort
-  let blw = self.doc.get_putBelow() ? '[below]' : ''
-  echo '[docgen] current style:' self.get_list()[self.current] blw
-endfun
-
 
 
 
@@ -691,8 +680,8 @@ endfun
 ""
 
 let s:vim = {
-      \ 'parsers': ['^fu\k*!\?\s%s%s%s%s'],
-      \ 'frameChar': '=',
+      \ 'parsers': { -> ['^fu\k*!\?\s%s%s%s%s'] },
+      \ 'frameChar': { -> '=' },
       \}
 
 "{{{1
@@ -708,9 +697,8 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:lua = {
-      \ 'parsers': ['^%sfunction\s%s%s%s',
-      \             '^%s%s\s*=\s*function%s%s'],
-      \ 'typePat': '\(local\)\?\s*'
+      \ 'parsers': { -> ['^%sfunction\s%s%s%s', '^%s%s\s*=\s*function%s%s'] },
+      \ 'typePat': { -> '\(local\)\?\s*' },
       \}
 
 "{{{1
@@ -734,11 +722,11 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:python = {
-      \ 'parsers': ['^\s*%s%s%s%s:'],
-      \ 'typePat': '\(class\|def\)\s*',
-      \ 'putBelow': 1,
-      \ 'comment': ['"""', '', '"""', '"'],
-      \ 'jollyChar': ':',
+      \ 'parsers': { -> ['^\s*%s%s%s%s:'] },
+      \ 'typePat': { -> '\(class\|def\)\s*' },
+      \ 'putBelow': { -> 1 },
+      \ 'comment': { -> ['"""', '', '"""', '"'] },
+      \ 'jollyChar': { -> ':' },
       \}
 
 "{{{1
@@ -773,16 +761,16 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:sh = {
-      \ 'parsers': ['^function\s%s%s%s%s', '^%s%s%s%s']
+      \ 'parsers': { -> ['^function\s%s%s%s%s', '^%s%s%s%s'] },
       \}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:java = {
-      \ 'parsers': ['^\s*%s%s%s%s\s*[;{]'],
-      \ 'typePat': '\(\%(public\|private\|protected\|static\|final\)\s*\)*',
-      \ 'rtypePat': '\s*\(\S\+\)\s\+',
-      \ 'order': ['type', 'rtype', 'name', 'params'],
+      \ 'parsers': { -> ['^\s*%s%s%s%s\s*[;{]'] },
+      \ 'typePat': { -> '\(\%(public\|private\|protected\|static\|final\)\s*\)*' },
+      \ 'rtypePat': { -> '\s*\(\S\+\)\s\+' },
+      \ 'order': { -> ['type', 'rtype', 'name', 'params'] },
       \}
 
 "{{{1
@@ -803,15 +791,15 @@ endfun
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:ruby = {
-      \ 'parsers': ['^\s*def\s\+%s%s[=!]\?%s%s'],
-      \ 'nameFmt': [s:ph]
+      \ 'parsers': { -> ['^\s*def\s\+%s%s[=!]\?%s%s'] },
+      \ 'nameFmt': { -> [s:ph] },
       \}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 
 let s:go = {
-      \ 'parsers': ['^func\s\+%s%s%s%s\s*{']
+      \ 'parsers': { -> ['^func\s\+%s%s%s%s\s*{'] },
       \}
 
 "{{{1
