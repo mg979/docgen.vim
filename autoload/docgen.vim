@@ -67,7 +67,7 @@ fun! docgen#func(bang, count) abort
     call doc.style.apply()
   endif
 
-  let startLn = doc.parse(doc.search_function())
+  let startLn = doc.parse()
   if !startLn | return | endif
 
   " move to the line with the function declaration
@@ -261,27 +261,28 @@ endfun "}}}
 ""
 fun! s:Doc.parse(where) abort
   "{{{1
-  if !a:where
+  let startLn = self.search_target()
+  if !startLn
     return 0
   endif
   let [g1, g2, g3, g4] = self.get_groups()
-  let all  = matchlist(getline(a:where), self.pattern)[1:]
+  let all  = matchlist(getline(startLn), self.pattern)[1:]
   let self.funcType    = trim(all[g1])
   let self.funcName    = trim(all[g2])
   let self.funcParams  = trim(all[g3])
   let self.funcRtype   = trim(all[g4])
-  return a:where
+  return startLn
 endfun "}}}
 
 
 ""
-" Function: s:Doc.search_function
-" Search the closest function declaration upwards, if it can be found set the
-" current pattern to the one that found it.
+" Function: s:Doc.search_target
+" Search the closest target upwards, if it can be found set the current pattern
+" to the one that found it.
 "
-" @return: the line number with the function declaration
+" @return: the line number with the docstring target
 ""
-fun! s:Doc.search_function() abort
+fun! s:Doc.search_target() abort
   "{{{1
   let startLn = 0
   let emptyLn = search('^\s*$', 'cnbW')
