@@ -17,16 +17,27 @@ let s:ph = '$' . 'PLACEHOLDER'
 " @param bang: with full length frame
 " @param cnt:  extra height of the box, both above and below
 ""
-fun! docgen#box(bang, cnt) abort
+fun! docgen#box(bang, count) abort
   " {{{1
-  let doc = s:new()
+  let doc = s:new(0)
+
+  " evaluate and apply docstring style
+  let doc.style.is_boxed = a:bang
+  if a:count
+    call doc.style.change(a:count - 1)
+    call doc.style.apply()
+    call doc.style.echo()
+  else
+    call doc.style.apply()
+  endif
+
   let is_comment = doc.is_comment(line('.'))
-  let lines = doc.create_box(doc.replace_comment(), a:bang, doc.comment()[3], a:cnt)
+  let lines = doc.create_box(doc.replace_comment(), doc.comment()[3])
   exe 'silent' (is_comment ? '-1': '') . 'put =lines'
 
   call doc.reindent_box(lines)
   normal! `[
-  exe 'normal!' (a:cnt + 1) . 'j'
+  exe 'normal!' (doc.style.extraHeight + 1) . 'j'
   " could be a converted comment
   let @= = is_comment ? '""' : '"A"'
 endfun "}}}
@@ -50,7 +61,7 @@ fun! docgen#func(bang, count) abort
     return
   endif
 
-  let doc = s:new()
+  let doc = s:new(1)
 
   " with bang, we only change the current style, we don't parse anything
   if a:bang
@@ -86,7 +97,7 @@ fun! docgen#func(bang, count) abort
   let lines = doc.preserve_oldlines( lines, doc.previous_docstring(startLn, doc.below()) )
 
   " align placeholders and create box
-  let lines = doc.create_box( lines, doc.boxed(), doc.frameChar(), 0 )
+  let lines = doc.create_box( lines, doc.frameChar() )
 
   exe 'silent ' ( doc.below() ? '' : '-1' ) . 'put =lines'
   call doc.reindent_box(lines)
@@ -134,7 +145,7 @@ let s:Doc = { 'parsed': {}, 'templates': {}, 'lines': {} }
 " s:new: start a new DocGen instance
 " @return: the instance
 ""
-fun! s:new() abort
+fun! s:new(is_docstring) abort
   "{{{1
   " b:docgen can create a new s:{&filetype} variable, to add support for
   " unsupported filetypes
@@ -144,6 +155,7 @@ fun! s:new() abort
 
   let doc = extend(deepcopy(s:Doc), s:{&filetype})
   let doc.style = s:Style
+  let doc.style.is_docstring = a:is_docstring
   " so that s:Style can access the current instance
   let doc.style.doc = doc
   return doc
@@ -201,7 +213,9 @@ endfun "}}}
 
 fun! s:Doc.boxed()
   " {{{1
-  return self.style.get_style() == 'boxed'
+  let style = self.style.get_style()
+  return self.style.is_docstring ? style == 'boxed'
+        \                        : style == 'box' || style == 'large_box'
 endfun "}}}
 
 fun! s:Doc.minimal()
@@ -520,21 +534,21 @@ endfun "}}}
 " @param extraHeight: additional empty lines near the edges
 " @return: the box lines
 ""
-fun! s:Doc.create_box(lines, boxed, char, extraHeight) abort
+fun! s:Doc.create_box(lines, char) abort
   " {{{1
   let [a, m, b, _] = self.comment()
   let rwidth = &tw ? &tw : 79
-  if a:boxed && a != b
+  if self.boxed() && a != b
     let box1 = a . repeat(a:char, rwidth - strlen(a))
     let box2 = ' ' . repeat(a:char, rwidth - strlen(a) - 1) . trim(b)
-  elseif a:boxed
+  elseif self.boxed()
     let box1 = m . repeat(a:char, rwidth - strlen(a))
     let box2 = box1
   else
     let box1 = a . trim(m)
     let box2 = m . trim(b)
   endif
-  let extra = map(range(a:extraHeight), { k,v -> m })
+  let extra = map(range(self.style.extraHeight), { k,v -> m })
   ""
   " Reformat the lines as comment. Top and bottom lines are not handled here.
   "   - empty line ? comment char(s)
@@ -624,8 +638,9 @@ endfun "}}}
 ""
 
 let s:Style = {
-      \   'list': ['nonboxed', 'boxed', 'simple', 'minimal'],
-      \  }
+      \  'docstring': ['nonboxed', 'boxed', 'simple', 'minimal'],
+      \  'box': ['simple', 'box', 'large_simple', 'large_box'],
+      \}
 
 ""
 " s:Style.change
@@ -634,15 +649,16 @@ let s:Style = {
 fun! s:Style.change(...) abort
   "{{{1
   let ft = s:{&filetype}
+  let v = self.is_docstring ? 'dg_current' : 'db_current'
   if a:0
-    let ft.current = a:1 - 1
+    let ft[v] = a:1 - 1
   else
-    let ft.current = self.get_current()
+    let ft[v] = self.get_current()
   endif
-  if ft.current >= len(self.get_list()) - 1
-    let ft.current = 0
+  if ft[v] >= len(self.get_list()) - 1
+    let ft[v] = 0
   else
-    let ft.current += 1
+    let ft[v] += 1
   endif
 endfun "}}}
 
@@ -667,10 +683,15 @@ endfun "}}}
 fun! s:Style.apply() abort
   "{{{1
   let style = self.get_style()
-  for x in ['header', 'params', 'rtype']
-    let fmt = eval('self.doc.'.x.'Fmt()')
-    let self.doc.templates[x] = type(fmt) == v:t_dict ? fmt[style] : fmt
-  endfor
+  if self.is_docstring
+    for x in ['header', 'params', 'rtype']
+      let fmt = eval('self.doc.'.x.'Fmt()')
+      let self.doc.templates[x] = type(fmt) == v:t_dict ? fmt[style] : fmt
+    endfor
+    let self.extraHeight = 0
+  else
+    let self.extraHeight = style == 'large_simple' || style == 'large_box'
+  endif
 endfun "}}}
 
 ""
@@ -678,8 +699,9 @@ endfun "}}}
 ""
 fun! s:Style.echo() abort
   "{{{1
-  let blw = self.doc.below() ? '[below]' : ''
-  echo '[docgen] current style:' self.get_style() blw
+  let box = self.is_docstring ? '[docgen]' : '[docbox]'
+  let blw = self.is_docstring && self.doc.below() ? '[below]' : ''
+  echo box 'current style:' self.get_style() blw
 endfun "}}}
 
 ""
@@ -695,7 +717,8 @@ endfun "}}}
 ""
 fun! s:Style.get_current() abort
   "{{{1
-  return get(s:{&filetype}, 'current', 0)
+  return self.is_docstring ? get(s:{&filetype}, 'dg_current', 0)
+        \                  : get(s:{&filetype}, 'db_current', 0)
 endfun "}}}
 
 ""
@@ -703,7 +726,9 @@ endfun "}}}
 ""
 fun! s:Style.get_list() abort
   "{{{1
-  return get(s:{&filetype}, 'styles', self.list)
+  return self.is_docstring ? get(s:{&filetype}, 'docstring_styles', self.docstring) :
+        \self.is_boxed     ? filter(copy(get(s:{&filetype}, 'box_styles', self.box)), { k,v -> v =~ 'box' })
+        \                  : filter(copy(get(s:{&filetype}, 'box_styles', self.box)), { k,v -> v !~ 'box' })
 endfun "}}}
 
 
@@ -765,7 +790,6 @@ let s:python = {
       \ 'parsers':   { -> ['^\s*%s%s%s%s:'] },
       \ 'typePat':   { -> '\(class\|def\)\s*' },
       \ 'putBelow':  { -> 1 },
-      \ 'comment':   { -> ['"""', '', '"""', '"'] },
       \ 'jollyChar': { -> ':' },
       \}
 
@@ -774,6 +798,10 @@ fun! s:python.rtypeFmt() abort
   let rtype = substitute(self.parsed.rtype, '\s*->\s*', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
   return [self.jollyChar() . 'return: ' . rtype . ' ' . s:ph]
+endfun
+
+fun! s:python.comment() abort
+  return self.style.is_docstring ? ['"""', '', '"""', '"'] : ['#', '#', '#', '#']
 endfun
 
 fun! s:python.is_comment(line) abort
