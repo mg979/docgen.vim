@@ -312,20 +312,6 @@ else
   let s:_endCommentBlock   = get(g:, 'DoxygenToolkit_endCommentBlock', "*/")
 endif
 
-" Compact documentation
-" /**
-"  * \brief foo      --->    /** \brief foo */
-"  */
-let s:compactOneLineDoc = get(g:, 'DoxygenToolkit_compactOneLineDoc', "no")
-" /**
-"  * \brief foo             /**
-"  *                         * \brief foo
-"  * \param bar      --->    * \param bar
-"  *                         * \return
-"  * \return                 */
-"  */
-let s:compactDoc = get(g:, 'DoxygenToolkit_compactDoc', "no")
-
 " Necessary '\<' and '\>' will be added to each item of the list.
 let s:ignoreForReturn = ['template', 'explicit', 'inline', 'static', 'virtual', 'void\([[:blank:]]*\*\)\@!', 'const', 'volatile', 'struct', 'extern']
 if exists("g:DoxygenToolkit_ignoreForReturn")
@@ -455,7 +441,7 @@ endfunction
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Main comment function for class, attribute, function...
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-function! doxygen#comment_func()
+function! doxygen#comment_func(docgen)
 
   " Initialize default templates.
   " Assure compatibility with Python for classes (cf. endDocPattern).
@@ -617,8 +603,10 @@ function! doxygen#comment_func()
     endif
   endif
 
+  let style = a:docgen.style.get_style()
+
   " Remove the function/class/... name when it is not necessary
-  if      (
+  if ( style == 'simple' || style == 'minimal' ) && (
         \    ( l:doc.type == "class"     && !s:Get('DoxygenToolkit_briefTag_className')      )
         \ || ( l:doc.type == "struct"    && !s:Get('DoxygenToolkit_briefTag_structName')     )
         \ || ( l:doc.type == "enum"      && !s:Get('DoxygenToolkit_briefTag_enumName')       )
@@ -649,8 +637,10 @@ function! doxygen#comment_func()
   endif
 
   " Brief
-  if( s:compactOneLineDoc =~ "yes" && l:doc.returns != "yes" && len( l:doc.params ) == 0 )
+  if( style == 'minimal' )
     let s:compactOneLineDoc = "yes"
+    let l:doc.returns = "no"
+    let l:doc.params = []
     exec "normal! O".strpart( s:startCommentTag, 0, 1 )
     exec "normal! A".strpart( s:startCommentTag, 1 ).s:brief_pre
   else
@@ -667,29 +657,25 @@ function! doxygen#comment_func()
   let pos = getcurpos()[1:2]
 
   " Arguments/parameters
-  if( s:compactDoc =~ "yes" )
-    let s:insertEmptyLine = 0
-  else
-    let s:insertEmptyLine = 1
-  endif
+  let insertEmptyLine = !( style == 'simple' || style == 'minimal' )
   for param in l:doc.templates
-    if( s:insertEmptyLine == 1 )
+    if( insertEmptyLine == 1 )
       exec "normal! o".substitute( s:interCommentTag, "[[:blank:]]*$", "", "" )
-      let s:insertEmptyLine = 0
+      let insertEmptyLine = 0
     endif
     exec "normal! o" . s:interCommentTag . s:templateParamTag_pre . param . s:templateParamTag_post
   endfor
   for param in l:doc.params
-    if( s:insertEmptyLine == 1 )
+    if( insertEmptyLine == 1 )
       exec "normal! o" . substitute( s:interCommentTag, "[[:blank:]]*$", "", "" )
-      let s:insertEmptyLine = 0
+      let insertEmptyLine = 0
     endif
     exec "normal! o" . s:interCommentTag . s:param_pre . param . s:param_post . ' ' s:ph
   endfor
 
   " Returned value
   if( l:doc.returns == "yes" )
-    if( s:compactDoc != "yes" )
+    if !( style == 'simple' || style == 'minimal' )
       exec "normal! o" . substitute( s:interCommentTag, "[[:blank:]]*$", "", "" )
     endif
     exec "normal! o" . s:interCommentTag . s:return
@@ -697,15 +683,11 @@ function! doxygen#comment_func()
 
   " Exception (throw) values (cpp only)
   if( len( l:doc.throws ) > 0 )
-    if( s:compactDoc =~ "yes" )
-      let s:insertEmptyLine = 0
-    else
-      let s:insertEmptyLine = 1
-    endif
+    let insertEmptyLine = !( style == 'simple' || style == 'minimal' )
     for param in l:doc.throws
-      if( s:insertEmptyLine == 1 )
+      if( insertEmptyLine == 1 )
         exec "normal! o".substitute( s:interCommentTag, "[[:blank:]]*$", "", "" )
-        let s:insertEmptyLine = 0
+        let insertEmptyLine = 0
       endif
       exec "normal! o" . s:interCommentTag . s:throwTag_pre . param . s:throwTag_post
     endfor
