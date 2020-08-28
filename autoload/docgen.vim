@@ -570,12 +570,27 @@ fun! s:Doc.reindent_box(lines) abort
   silent keepjumps normal! `[=`]
   let ind = matchstr(getline('.'), '^\s*')
   let lines = map(a:lines, "substitute(v:val, '^\s*', ind, '')")
-  let i = line('.')
+  let [first, i, char] = [line('.') + 1, line('.'), self.frameChar()]
   let maxw = &tw ? &tw : 79
+  " executing DocBox on a previous comment and wanting a full box
+  let is_boxifying_comment = !self.style.is_docstring &&
+        \                     self.was_comment && self.style.fullbox
+
   for line in lines
-    if strlen(line) > maxw
-      let removeChars = printf('\V%s\{%s}', self.frameChar(), strlen(line) - maxw)
+    if strwidth(line) > maxw
+      let removeChars = printf('\V%s\{%s}', char, strlen(line) - maxw)
       let line = substitute(line, removeChars, '', '')
+    endif
+    if is_boxifying_comment && strwidth(line) < maxw
+      let line .= repeat(' ', maxw - strwidth(line) - strwidth(char)) . char
+      if self.style.centered && i == first
+        let ind = matchstr(line, '^\s*')
+        let text = trim(matchstr(line, '^\V\s\*' . char . '\zs\.\*\ze' . char))
+        let spaces = maxw - strlen(ind) - strwidth(text) - strwidth(char) * 2
+        let s = repeat(' ', spaces/2)
+        let [s1, s2] = spaces % 2 ? [s, s . ' '] : [s, s]
+        let line = ind . char . s1 . text . s2 . char
+      endif
     endif
     call setline(i, line)
     let i += 1
@@ -639,7 +654,7 @@ endfun "}}}
 
 let s:Style = {
       \  'docstring': ['nonboxed', 'boxed', 'simple', 'minimal'],
-      \  'box': ['simple', 'box', 'large_simple', 'large_box'],
+      \  'box': ['simple', 'box', 'large_simple', 'large_box', 'fullbox', 'fullbox_centered'],
       \}
 
 ""
@@ -690,8 +705,12 @@ fun! s:Style.apply() abort
       let self.doc.templates[x] = type(fmt) == v:t_dict ? fmt[style] : fmt
     endfor
     let self.extraHeight = 0
+    let self.centered = 0
+    let self.fullbox = 0
   else
     let self.extraHeight = style == 'large_simple' || style == 'large_box'
+    let self.centered = style == 'fullbox_centered'
+    let self.fullbox = style =~ 'fullbox'
   endif
 endfun "}}}
 
