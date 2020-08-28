@@ -272,104 +272,51 @@ let s:licenseTag .= "You should have received a copy of the GNU General Public L
 let s:licenseTag .= "along with this program; if not, write to the Free Software\<enter>"
 let s:licenseTag .= "Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.\<enter>"
 
-" Common standard constants
-if !exists("g:DoxygenToolkit_briefTag_pre")
-  let g:DoxygenToolkit_briefTag_pre = "@brief "
-endif
-if !exists("g:DoxygenToolkit_briefTag_post")
-  let g:DoxygenToolkit_briefTag_post = ""
-endif
-if !exists("g:DoxygenToolkit_templateParamTag_pre")
-  let g:DoxygenToolkit_templateParamTag_pre = "@tparam "
-endif
-if !exists("g:DoxygenToolkit_templateParamTag_post")
-  let g:DoxygenToolkit_templateParamTag_post = ""
-endif
-if !exists("g:DoxygenToolkit_paramTag_pre")
-  let g:DoxygenToolkit_paramTag_pre = "@param "
-endif
-if !exists("g:DoxygenToolkit_paramTag_post")
-  let g:DoxygenToolkit_paramTag_post = ""
-endif
-if !exists("g:DoxygenToolkit_returnTag")
-  let g:DoxygenToolkit_returnTag = "@return "
-endif
-if !exists("g:DoxygenToolkit_throwTag_pre")
-  let g:DoxygenToolkit_throwTag_pre = "@throw " " @exception is also valid
-endif
-if !exists("g:DoxygenToolkit_throwTag_post")
-  let g:DoxygenToolkit_throwTag_post = ""
-endif
-if !exists("g:DoxygenToolkit_blockHeader")
-  let g:DoxygenToolkit_blockHeader = ""
-endif
-if !exists("g:DoxygenToolkit_blockFooter")
-  let g:DoxygenToolkit_blockFooter = ""
-endif
-if !exists("g:DoxygenToolkit_licenseTag")
-  let g:DoxygenToolkit_licenseTag = s:licenseTag
-endif
-if !exists("g:DoxygenToolkit_fileTag")
-  let g:DoxygenToolkit_fileTag = "@file "
-endif
-if !exists("g:DoxygenToolkit_authorTag")
-  let g:DoxygenToolkit_authorTag = "@author "
-endif
-if !exists("g:DoxygenToolkit_dateTag")
-  let g:DoxygenToolkit_dateTag = "@date "
-endif
-if !exists("g:DoxygenToolkit_versionTag")
-  let g:DoxygenToolkit_versionTag = "@version "
-endif
-if !exists("g:DoxygenToolkit_undocTag")
-  let g:DoxygenToolkit_undocTag = "DOX_SKIP_BLOCK"
-endif
-if !exists("g:DoxygenToolkit_blockTag")
-  let g:DoxygenToolkit_blockTag = "@name "
-endif
-if !exists("g:DoxygenToolkit_classTag")
-  let g:DoxygenToolkit_classTag = "@class "
-endif
+let s:ph = '$' . 'PLACEHOLDER'
 
-if !exists("g:DoxygenToolkit_cinoptions")
-    let g:DoxygenToolkit_cinoptions = "c1C1"
-endif
-if !exists("g:DoxygenToolkit_startCommentTag ")
-  let g:DoxygenToolkit_startCommentTag = "/** "
-  let g:DoxygenToolkit_startCommentBlock = "/* "
-endif
-if !exists("g:DoxygenToolkit_interCommentTag ")
-  let g:DoxygenToolkit_interCommentTag = "* "
-endif
-if !exists("g:DoxygenToolkit_interCommentBlock ")
-  let g:DoxygenToolkit_interCommentBlock = "* "
-endif
-if !exists("g:DoxygenToolkit_endCommentTag ")
-  let g:DoxygenToolkit_endCommentTag = "*/"
-  let g:DoxygenToolkit_endCommentBlock = "*/"
-endif
-if exists("g:DoxygenToolkit_commentType")
-  if ( g:DoxygenToolkit_commentType == "C++" )
-    let g:DoxygenToolkit_startCommentTag = "/// "
-    let g:DoxygenToolkit_interCommentTag = "/// "
-    let g:DoxygenToolkit_endCommentTag = ""
-    let g:DoxygenToolkit_startCommentBlock = "// "
-    let g:DoxygenToolkit_interCommentBlock = "// "
-    let g:DoxygenToolkit_endCommentBlock = ""
-  else
-    let g:DoxygenToolkit_commentType = "C"
-  endif
+" Common standard constants
+let s:briefTag_pre          = get(g:, 'DoxygenToolkit_briefTag_pre', "@brief ")
+let s:briefTag_post         = get(g:, 'DoxygenToolkit_briefTag_post', ":")
+let s:templateParamTag_pre  = get(g:, 'DoxygenToolkit_templateParamTag_pre', "@tparam ")
+let s:templateParamTag_post = get(g:, 'DoxygenToolkit_templateParamTag_post', "")
+let s:paramTag_pre          = get(g:, 'DoxygenToolkit_paramTag_pre', "@param ")
+let s:paramTag_post         = get(g:, 'DoxygenToolkit_paramTag_post', "")
+let s:returnTag             = get(g:, 'DoxygenToolkit_returnTag', "@return ")
+let s:throwTag_pre          = get(g:, 'DoxygenToolkit_throwTag_pre', "@throw ")
+let s:throwTag_post         = get(g:, 'DoxygenToolkit_throwTag_post', "")
+let s:blockHeader           = get(g:, 'DoxygenToolkit_blockHeader', "")
+let s:blockFooter           = get(g:, 'DoxygenToolkit_blockFooter', "")
+let s:licenseTag            = get(g:, 'DoxygenToolkit_licenseTag', s:licenseTag)
+let s:fileTag               = get(g:, 'DoxygenToolkit_fileTag', "@file ")
+let s:authorTag             = get(g:, 'DoxygenToolkit_authorTag', "@author ")
+let s:dateTag               = get(g:, 'DoxygenToolkit_dateTag', "@date ")
+let s:versionTag            = get(g:, 'DoxygenToolkit_versionTag', "@version ")
+let s:undocTag              = get(g:, 'DoxygenToolkit_undocTag', "DOX_SKIP_BLOCK")
+let s:blockTag              = get(g:, 'DoxygenToolkit_blockTag', "@name ")
+let s:classTag              = get(g:, 'DoxygenToolkit_classTag', "@class ")
+let s:cinoptions            = get(g:, 'DoxygenToolkit_cinoptions', "c1C1")
+
+if get(g:, 'DoxygenToolkit_commentType', 'C') == 'C++'
+  let s:_startCommentTag   = "/// "
+  let s:_interCommentTag   = "/// "
+  let s:_endCommentTag     = ""
+  let s:_startCommentBlock = "// "
+  let s:_interCommentBlock = "// "
+  let s:_endCommentBlock   = ""
 else
-  let g:DoxygenToolkit_commentType = "C"
+  let s:_startCommentTag   = get(g:, 'DoxygenToolkit_startCommentTag', "/* ")
+  let s:_startCommentBlock = get(g:, 'DoxygenToolkit_startCommentBlock', "/* ")
+  let s:_interCommentTag   = get(g:, 'DoxygenToolkit_interCommentTag', "* ")
+  let s:_interCommentBlock = get(g:, 'DoxygenToolkit_interCommentBlock', "* ")
+  let s:_endCommentTag     = get(g:, 'DoxygenToolkit_endCommentTag', "*/")
+  let s:_endCommentBlock   = get(g:, 'DoxygenToolkit_endCommentBlock', "*/")
 endif
 
 " Compact documentation
 " /**
 "  * \brief foo      --->    /** \brief foo */
 "  */
-if !exists("g:DoxygenToolkit_compactOneLineDoc")
-  let g:DoxygenToolkit_compactOneLineDoc = "no"
-endif
+let s:compactOneLineDoc = get(g:, 'DoxygenToolkit_compactOneLineDoc', "no")
 " /**
 "  * \brief foo             /**
 "  *                         * \brief foo
@@ -377,39 +324,26 @@ endif
 "  *                         * \return
 "  * \return                 */
 "  */
-if !exists("g:DoxygenToolkit_compactDoc")
-  let g:DoxygenToolkit_compactDoc = "no"
-endif
+let s:compactDoc = get(g:, 'DoxygenToolkit_compactDoc', "no")
 
 " Necessary '\<' and '\>' will be added to each item of the list.
 let s:ignoreForReturn = ['template', 'explicit', 'inline', 'static', 'virtual', 'void\([[:blank:]]*\*\)\@!', 'const', 'volatile', 'struct', 'extern']
-if !exists("g:DoxygenToolkit_ignoreForReturn")
-  let g:DoxygenToolkit_ignoreForReturn = s:ignoreForReturn[:]
-else
-  let g:DoxygenToolkit_ignoreForReturn += s:ignoreForReturn
+if exists("g:DoxygenToolkit_ignoreForReturn")
+  let s:ignoreForReturn += g:DoxygenToolkit_ignoreForReturn
 endif
-unlet s:ignoreForReturn
 
 " Maximum number of lines to check for function parameters
-if !exists("g:DoxygenToolkit_maxFunctionProtoLines")
-  let g:DoxygenToolkit_maxFunctionProtoLines = 10
-endif
+let s:maxFunctionProtoLines = get(g:, 'DoxygenToolkit_maxFunctionProtoLines', 10)
 
 " Keep empty line (if any) between comment and function/class/...
-if !exists("g:DoxygenToolkit_keepEmptyLineAfterComment")
-  let g:DoxygenToolkit_keepEmptyLineAfterComment = "no"
-endif
+let s:keepEmptyLineAfterComment = get(g:, 'DoxygenToolkit_keepEmptyLineAfterComment', "no")
 
 " PYTHON specific
 """""""""""""""""
 " Remove automatically self parameter from function to avoid its documantation
-if !exists("g:DoxygenToolkit_python_autoRemoveSelfParam")
-  let g:DoxygenToolkit_python_autoRemoveSelfParam = "yes"
-endif
+let s:python_autoRemoveSelfParam = get(g:, 'DoxygenToolkit_python_autoRemoveSelfParam', "yes")
 " Consider functions as if they always return something (default: yes)
-if !exists("g:DoxygenToolkit_python_autoFunctionReturn")
-  let g:DoxygenToolkit_python_autoFunctionReturn = "yes"
-endif
+let s:python_autoFunctionReturn = get(g:, 'DoxygenToolkit_python_autoFunctionReturn', "yes")
 
 
 """"""""""""""""""""""""""
@@ -419,20 +353,18 @@ function! doxygen#license_func()
   call s:InitializeParameters()
 
   " Test authorName variable
-  if !exists("g:DoxygenToolkit_authorName")
-    let g:DoxygenToolkit_authorName = input("Enter name of the author (generally yours...) : ")
-  endif
-  mark d
+  let s:authorName = get(g:, 'DoxygenToolkit_authorName', input("Enter name of the author (generally yours...) : "))
+  let pos = getcurpos()[1:2]
   let l:date = strftime("%Y")
   exec "normal! O".strpart( s:startCommentBlock, 0, 1 )
-  exec "normal! A".strpart( s:startCommentBlock, 1 ).substitute( g:DoxygenToolkit_licenseTag, "\<enter>", "\<enter>".s:interCommentBlock, "g" )
+  exec "normal! A".strpart( s:startCommentBlock, 1 ).substitute( s:licenseTag, "\<enter>", "\<enter>".s:interCommentBlock, "g" )
   if( s:endCommentBlock != "" )
     exec "normal! o".s:endCommentBlock
   endif
-  if( g:DoxygenToolkit_licenseTag == s:licenseTag )
-    exec "normal! %jA".l:date." - ".g:DoxygenToolkit_authorName
+  if( s:licenseTag == s:licenseTag )
+    exec "normal! %jA".l:date." - ".s:authorName
   endif
-  exec "normal! `d"
+  call cursor(pos)
 
   call s:RestoreParameters()
 endfunction
@@ -445,33 +377,29 @@ function! doxygen#author_func()
   call s:InitializeParameters()
 
   " Test authorName variable
-  if !exists("g:DoxygenToolkit_authorName")
-    let g:DoxygenToolkit_authorName = input("Enter name of the author (generally yours...) : ")
-  endif
+  let s:authorName = get(g:, 'DoxygenToolkit_:authorName', input("Enter name of the author (generally yours...) : "))
 
   " Test versionString variable
-  if !exists("g:DoxygenToolkit_versionString")
-    let g:DoxygenToolkit_versionString = input("Enter version string : ")
-  endif
+  let s:versionString = get(g:, 'DoxygenToolkit_:versionString', input("Enter version string : "))
 
   " Get file name
   let l:fileName = expand('%:t')
 
   " Begin to write skeleton
   let l:insertionMode = s:StartDocumentationBlock()
-  exec "normal! ".l:insertionMode.s:interCommentTag.g:DoxygenToolkit_fileTag.l:fileName
+  exec "normal! ".l:insertionMode.s:interCommentTag.s:fileTag.l:fileName
   exec "normal! o".s:interCommentTag.s:brief_pre
-  mark d
-  exec "normal! o".s:interCommentTag.g:DoxygenToolkit_authorTag.g:DoxygenToolkit_authorName
-  exec "normal! o".s:interCommentTag.g:DoxygenToolkit_versionTag.g:DoxygenToolkit_versionString
+  let pos = getcurpos()[1:2]
+  exec "normal! o".s:interCommentTag.s:authorTag.s:authorName
+  exec "normal! o".s:interCommentTag.s:versionTag.s:versionString
   let l:date = strftime("%Y-%m-%d")
-  exec "normal! o".s:interCommentTag.g:DoxygenToolkit_dateTag.l:date
-  if ( g:DoxygenToolkit_endCommentTag != "" )
+  exec "normal! o".s:interCommentTag.s:dateTag.l:date
+  if ( s:endCommentTag != "" )
     exec "normal! o".s:endCommentTag
   endif
 
   " Move the cursor to the rigth position
-  exec "normal! `d"
+  call cursor(pos)
 
   call s:RestoreParameters()
   startinsert!
@@ -486,20 +414,20 @@ function! doxygen#undocument_func(blockTag)
   call s:InitializeParameters()
   let l:search = "#ifdef " . a:blockTag
   " Save cursor position and go to the begining of the file
-  mark d
+  let pos = getcurpos()[1:2]
   exec "normal! gg"
 
   while ( search(l:search, 'W') != 0 )
-    exec "normal! O#ifndef " . g:DoxygenToolkit_undocTag
+    exec "normal! O#ifndef " . s:undocTag
     exec "normal! j^%"
-    if ( g:DoxygenToolkit_endCommentTag == "" )
-      exec "normal! o#endif // " . g:DoxygenToolkit_undocTag
+    if ( s:endCommentTag == "" )
+      exec "normal! o#endif // " . s:undocTag
     else
-      exec "normal! o#endif /* " . g:DoxygenToolkit_undocTag . " */"
+      exec "normal! o#endif /* " . s:undocTag . " */"
     endif
   endwhile
 
-  exec "normal! `d"
+  call cursor(pos)
   call s:RestoreParameters()
 endfunction
 
@@ -512,12 +440,12 @@ function! doxygen#block_func()
   call s:InitializeParameters()
 
   let l:insertionMode = s:StartDocumentationBlock()
-  exec "normal! ".l:insertionMode.s:interCommentTag.g:DoxygenToolkit_blockTag
-  mark d
+  exec "normal! ".l:insertionMode . s:interCommentTag . s:blockTag
+  let pos = getcurpos()[1:2]
   exec "normal! o".s:interCommentTag."@{ ".s:endCommentTag
   exec "normal! o".strpart( s:startCommentTag, 0, 1 )
   exec "normal! A".strpart( s:startCommentTag, 1 )." @} ".s:endCommentTag
-  exec "normal! `d"
+  call cursor(pos)
 
   call s:RestoreParameters()
   startinsert!
@@ -565,7 +493,8 @@ function! doxygen#comment_func()
   let l:doc = { "type": "", "name": "None", "params": [], "returns": "" , "templates": [], "throws": [] }
 
   " Mark current line for future use
-  mark d
+  let pos = getcurpos()[1:2]
+  let startpos = pos
 
   " Look for function/method/... to document
   " We look only on the first three lines!
@@ -577,14 +506,14 @@ function! doxygen#comment_func()
   " Error message when the buffer is still empty.
   if( match( l:lineBuffer, l:emptyLinePattern ) != -1 )
     call s:WarnMsg( "Nothing to document here!" )
-    exec "normal! `d"
+    call cursor(pos)
     return
   endif
 
   " Remove unwanted lines (ie: jump to the first significant line)
-  if( g:DoxygenToolkit_keepEmptyLineAfterComment == "no" )
+  if( s:keepEmptyLineAfterComment == "no" )
     " This erase previous mark
-    mark d
+    let pos = getcurpos()[1:2]
   endif
 
   " Look for the end of the function/class/... to document
@@ -593,7 +522,7 @@ function! doxygen#comment_func()
   let l:count = 0
   let l:throwCompleted = 0
   let l:endReadPattern = l:endDocPattern
-  while( l:endDocFound == 0 && l:count < g:DoxygenToolkit_maxFunctionProtoLines )
+  while( l:endDocFound == 0 && l:count < s:maxFunctionProtoLines )
     let l:lineBuffer = s:RemoveComments( l:lineBuffer )
     " Valid only for cpp. For Python it must be 'class ...:' or 'def ...:' or
     " '... EOL'.
@@ -625,7 +554,7 @@ function! doxygen#comment_func()
     else
       call s:WarnMsg( l:readError )
     endif
-    exec "normal! `d"
+    call cursor(pos)
     return
   endif
 
@@ -707,20 +636,20 @@ function! doxygen#comment_func()
   """""""""""""""""""""""""""""""""
 
   call s:InitializeParameters()
-  if( s:CheckFileType() == "python" && l:doc.type == "function" && g:DoxygenToolkit_python_autoFunctionReturn == "yes" )
+  if( s:CheckFileType() == "python" && l:doc.type == "function" && s:python_autoFunctionReturn == "yes" )
     let l:doc.returns = "yes"
   endif
 
   " Header
-  exec "normal! `d"
-  if( g:DoxygenToolkit_blockHeader != "" )
+  call cursor(pos)
+  if( s:blockHeader != "" )
     exec "normal! O" . strpart( s:startCommentBlock, 0, 1 )
-    exec "normal! A" . strpart( s:startCommentBlock, 1 ) . g:DoxygenToolkit_blockHeader . s:endCommentBlock
-    exec "normal! `d"
+    exec "normal! A" . strpart( s:startCommentBlock, 1 ) . s:blockHeader . s:endCommentBlock
+    call cursor(pos)
   endif
 
   " Brief
-  if( g:DoxygenToolkit_compactOneLineDoc =~ "yes" && l:doc.returns != "yes" && len( l:doc.params ) == 0 )
+  if( s:compactOneLineDoc =~ "yes" && l:doc.returns != "yes" && len( l:doc.params ) == 0 )
     let s:compactOneLineDoc = "yes"
     exec "normal! O".strpart( s:startCommentTag, 0, 1 )
     exec "normal! A".strpart( s:startCommentTag, 1 ).s:brief_pre
@@ -732,13 +661,13 @@ function! doxygen#comment_func()
   if( l:doc.name != "None" )
     exec "normal! A".l:doc.name
   endif
-  exec "normal! A".s:brief_post
+  exec "normal! A".s:brief_post . s:ph
 
-  " Mark the line where the cursor will be positionned.
-  mark d
+  " Mark the line where the cursor will be positioned.
+  let pos = getcurpos()[1:2]
 
   " Arguments/parameters
-  if( g:DoxygenToolkit_compactDoc =~ "yes" )
+  if( s:compactDoc =~ "yes" )
     let s:insertEmptyLine = 0
   else
     let s:insertEmptyLine = 1
@@ -748,19 +677,19 @@ function! doxygen#comment_func()
       exec "normal! o".substitute( s:interCommentTag, "[[:blank:]]*$", "", "" )
       let s:insertEmptyLine = 0
     endif
-    exec "normal! o" . s:interCommentTag . g:DoxygenToolkit_templateParamTag_pre . param . g:DoxygenToolkit_templateParamTag_post
+    exec "normal! o" . s:interCommentTag . s:templateParamTag_pre . param . s:templateParamTag_post
   endfor
   for param in l:doc.params
     if( s:insertEmptyLine == 1 )
       exec "normal! o" . substitute( s:interCommentTag, "[[:blank:]]*$", "", "" )
       let s:insertEmptyLine = 0
     endif
-    exec "normal! o" . s:interCommentTag . s:param_pre . param . s:param_post
+    exec "normal! o" . s:interCommentTag . s:param_pre . param . s:param_post . ' ' s:ph
   endfor
 
   " Returned value
   if( l:doc.returns == "yes" )
-    if( g:DoxygenToolkit_compactDoc != "yes" )
+    if( s:compactDoc != "yes" )
       exec "normal! o" . substitute( s:interCommentTag, "[[:blank:]]*$", "", "" )
     endif
     exec "normal! o" . s:interCommentTag . s:return
@@ -768,7 +697,7 @@ function! doxygen#comment_func()
 
   " Exception (throw) values (cpp only)
   if( len( l:doc.throws ) > 0 )
-    if( g:DoxygenToolkit_compactDoc =~ "yes" )
+    if( s:compactDoc =~ "yes" )
       let s:insertEmptyLine = 0
     else
       let s:insertEmptyLine = 1
@@ -778,7 +707,7 @@ function! doxygen#comment_func()
         exec "normal! o".substitute( s:interCommentTag, "[[:blank:]]*$", "", "" )
         let s:insertEmptyLine = 0
       endif
-      exec "normal! o" . s:interCommentTag . g:DoxygenToolkit_throwTag_pre . param . g:DoxygenToolkit_throwTag_post
+      exec "normal! o" . s:interCommentTag . s:throwTag_pre . param . s:throwTag_post
     endfor
   endif
 
@@ -795,33 +724,17 @@ function! doxygen#comment_func()
   endif
 
   " Footer
-  if ( g:DoxygenToolkit_blockFooter != "" )
+  if ( s:blockFooter != "" )
     exec "normal! o".strpart( s:startCommentBlock, 0, 1 )
-    exec "normal! A" . strpart( s:startCommentBlock, 1 ) . g:DoxygenToolkit_blockFooter . s:endCommentBlock
+    exec "normal! A" . strpart( s:startCommentBlock, 1 ) . s:blockFooter . s:endCommentBlock
   endif
-  exec "normal! `d"
+  call cursor(startpos)
 
   call s:RestoreParameters()
-  if( s:compactOneLineDoc =~ "yes" && s:endCommentTag != "" )
-    startinsert
-  else
-    startinsert!
+  if search(s:ph, '')
+    let @/ = s:ph
+    let @= = '''"_cgn'''
   endif
-
-  " DEBUG purpose only
-  "call s:WarnMsg( "Found a ".l:doc.type." named ".l:doc.name." (env: ".s:CheckFileType().")." )
-  "if( l:doc.type == "function" )
-  "  let l:funcReturn = "returns something."
-  "  if( l:doc.returns == "" )
-  "    let l:funcReturn = "doesn't return anything."
-  "  endif
-  "  call s:WarnMsg( " - which ".l:funcReturn )
-  "  call s:WarnMsg( " - which has following parameter(s):" )
-  "  for param in l:doc.params
-  "    call s:WarnMsg( "   - ".param )
-  "  endfor
-  "endif
-
 endfunction
 
 
@@ -904,7 +817,7 @@ function! s:ParseFunctionParameters( lineBuffer, doc )
   if( s:CheckFileType() == "cpp" )
     let l:functionBuffer = strpart( a:lineBuffer, 0, l:paramPosition )
     " Remove unnecessary elements
-    for ignored in g:DoxygenToolkit_ignoreForReturn
+    for ignored in s:ignoreForReturn
       let l:functionBuffer = substitute( l:functionBuffer, '\<'.ignored.'\>', '', 'g' )
     endfor
     let l:functionReturnAndName = split( l:functionBuffer, '[[:blank:]*]' )
@@ -966,7 +879,7 @@ function! s:ParseFunctionParameters( lineBuffer, doc )
   if( s:CheckFileType() == "cpp" )
     call filter( l:params, 'v:val !~ "void"' )
   else
-    if( g:DoxygenToolkit_python_autoRemoveSelfParam == "yes" )
+    if( s:python_autoRemoveSelfParam == "yes" )
       call filter( l:params, 'v:val !~ "self"' )
     endif
   endif
@@ -1058,12 +971,12 @@ endfunction
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 function! s:InitializeParameters()
   if( s:CheckFileType() == "cpp" )
-    let s:startCommentTag   = g:DoxygenToolkit_startCommentTag
-    let s:interCommentTag   = g:DoxygenToolkit_interCommentTag
-    let s:endCommentTag     = g:DoxygenToolkit_endCommentTag
-    let s:startCommentBlock = g:DoxygenToolkit_startCommentBlock
-    let s:interCommentBlock = g:DoxygenToolkit_interCommentBlock
-    let s:endCommentBlock   = g:DoxygenToolkit_endCommentBlock
+    let s:startCommentTag   = s:_startCommentTag
+    let s:interCommentTag   = s:_interCommentTag
+    let s:endCommentTag     = s:_endCommentTag
+    let s:startCommentBlock = s:_startCommentBlock
+    let s:interCommentBlock = s:_interCommentBlock
+    let s:endCommentBlock   = s:_endCommentBlock
   else
     let s:startCommentTag   = "## "
     let s:interCommentTag   = "# "
@@ -1073,19 +986,19 @@ function! s:InitializeParameters()
     let s:endCommentBlock   = ""
   endif
 
-  let s:brief_pre = get(b:, 'DoxygenToolkit_briefTag_pre', g:DoxygenToolkit_briefTag_pre)
-  let s:brief_post = get(b:, 'DoxygenToolkit_briefTag_post', g:DoxygenToolkit_briefTag_post)
+  let s:brief_pre = get(b:, 'DoxygenToolkit_briefTag_pre', s:briefTag_pre)
+  let s:brief_post = get(b:, 'DoxygenToolkit_briefTag_post', s:briefTag_post)
 
-  let s:param_pre = get(b:, 'DoxygenToolkit_paramTag_pre', g:DoxygenToolkit_paramTag_pre)
-  let s:param_post = get(b:, 'DoxygenToolkit_paramTag_post', g:DoxygenToolkit_paramTag_post)
+  let s:param_pre = get(b:, 'DoxygenToolkit_paramTag_pre', s:paramTag_pre)
+  let s:param_post = get(b:, 'DoxygenToolkit_paramTag_post', s:paramTag_post)
 
-  let s:return = get(b:, 'DoxygenToolkit_returnTag', g:DoxygenToolkit_returnTag)
+  let s:return = get(b:, 'DoxygenToolkit_returnTag', s:returnTag)
 
   " Backup standard comment expension and indentation
   let s:commentsBackup = &comments
   let &comments        = ""
   let s:cinoptionsBackup = &cinoptions
-  let &cinoptions        = g:DoxygenToolkit_cinoptions
+  let &cinoptions        = s:cinoptions
   " Compatibility with c/c++ IDE plugin
   let s:timeoutlenBackup = &timeoutlen
   let &timeoutlen = 0
