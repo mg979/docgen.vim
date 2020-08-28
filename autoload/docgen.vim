@@ -56,7 +56,7 @@ fun! docgen#func(bang, count) abort
     return
   endif
 
-  if ft == 'c' || ft == 'cpp'
+  if ft == 'cpp'
     call doxygen#comment_func()
     return
   endif
@@ -766,6 +766,86 @@ endfun "}}}
 " Each filetype will define at least a list of function parsers.
 " After that, each can provide specific members or methods.
 ""
+
+let s:c = {
+      \ 'parsers':   { -> ['^%s%s\n\?%s%s\s*\n\?[{;]'] },
+      \ 'namePat':   { -> '\s*\(\w\+\|\*\?(\*?(\w\+)\)' },
+      \ 'paramsPat': { -> '\s*(\(.\{-}\))' },
+      \ 'typePat':   { -> '\(\%(extern\|static\|inline\)\s*\)*' },
+      \ 'rtypePat':  { -> '\s*\(.\{-}\)' },
+      \ 'order':     { -> ['type', 'rtype', 'name', 'params'] },
+      \}
+
+"{{{1
+""
+" This may be used as example to make a custom parser. EVERYTHING must be
+" defined as a function (also lambda is ok). Whatever is not defined here, will
+" have its fallback in the s:Doc class.
+"
+" The dictionary above contains the mandatory 'parsers' list.
+" The xxxPat are the patterns that will replace the '%s' in the parsers,
+" according to the order defined by the 'order' key.
+"
+" Then you can replace other methods.
+"
+" Functions with xxxFmt() are called first, when the style is applied. For
+" maximum flexibility, they should return a dictionary with the available
+" styles as keys, and the desired format as value. Sometimes you may just want
+" to return nothing (that is an empty list).
+"
+" paramsNames() is called after the parameters have been parsed. It is used to
+" refine how the parameters will be displayed, removing unwanted parts that
+" have been parsed.
+"
+" Functions with xxxLines() are called last, and return the lines as they will
+" be printed.
+""
+fun! s:c.rtypeFmt() abort
+  if self.parsed.rtype == 'void'
+    return []
+  endif
+  return {
+      \ 'boxed':    ['', 'Returns ' . self.parsed.rtype . ': ' . s:ph],
+      \ 'nonboxed': ['', 'Returns ' . self.parsed.rtype . ': ' . s:ph],
+      \ 'simple':   ['', 'Returns: ' . s:ph],
+      \ 'minimal':  [],
+      \}
+endfun
+
+fun! s:c.paramsFmt() abort
+  return {
+        \ 'boxed':    [self.jollyChar() . 'param %s: ' . s:ph],
+        \ 'nonboxed': [self.jollyChar() . 'param %s: ' . s:ph],
+        \ 'simple':   ['%s: ' . s:ph],
+        \ 'minimal':  [],
+        \}
+endfun
+
+fun! s:c.headerFmt()
+  return {
+      \ 'boxed':    ['%s', s:ph],
+      \ 'nonboxed': ['%s', s:ph],
+      \ 'simple':   ['%s', s:ph],
+      \ 'minimal':  ['%s:' . s:ph],
+      \}
+endfun
+
+fun! s:c.paramsNames() abort
+  if self.parsed.params == 'void'
+    return []
+  endif
+  return map(split(self.parsed.params, ','), { k,v -> substitute(split(v)[-1], '^\*', '', '') })
+endfun
+
+fun! s:c.headerLines() abort
+  let header = self.templates.header
+  if empty(self.lines.params) && empty(self.lines.return)
+    return [ self.parsed.name . ':' . s:ph ]
+  endif
+  return map(header, { k,v -> v =~ '%s' ? printf(v, self.parsed.name) : v })
+endfun "}}}
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:vim = {
       \ 'parsers':   { -> ['^fu\k*!\?\s%s%s%s%s'] },
