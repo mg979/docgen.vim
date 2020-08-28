@@ -765,10 +765,13 @@ endfun "}}}
 
 let s:vim = {
       \ 'parsers':   { -> ['^fu\k*!\?\s%s%s%s%s'] },
-      \ 'frameChar': { -> '=' },
       \}
 
 "{{{1
+fun! s:vim.frameChar() abort
+  return self.style.is_docstring ? '=' : '"'
+endfun
+
 ""
 " don't add the @return line if no meaningful return value
 ""
@@ -829,9 +832,6 @@ fun! s:python.is_comment(line) abort
 endfun
 
 fun! s:python.paramsNames() abort
-  if empty(self.templates.params) || self.minimal()
-    return []
-  endif
   let params = substitute(self.parsed.params, '\s*=\s*[^,]\+', '', 'g')
   while params =~ '('
     let params = substitute(params, '([^(]\{-})', '', 'g')
@@ -887,15 +887,40 @@ let s:ruby = {
 
 
 let s:go = {
-      \ 'parsers': { -> ['^func\s\+%s%s%s%s\s*{'] },
+      \ 'parsers':   { -> ['^func\s\+%s%s%s%s\s*{'] },
+      \ 'namePat':   { -> '\s*\%((.\{-})\s*\)\?\([^( \t]\+\)' },
+      \ 'paramsPat': { -> '\s*(\(.\{-}\))' },
+      \ 'rtypePat':  { -> '\s*\(.*\)\?' },
       \}
 
 "{{{1
+fun! s:go.headerFmt()
+  let ln = getline(self.startLn)
+  let f = match(ln, '^\s*func\s*(') >= 0
+        \ ? '[' . matchstr(ln, '^\s*func\s*(.\{-}\s\+\zs.\{-}\ze)') . '] Method'
+        \ : 'Function'
+  let s = match(ln, '^\s*func\s*(') >= 0
+        \ ? matchstr(ln, '^\s*func\s*(.\{-}\s\+\zs.\{-}\ze)') . '.'
+        \ : ''
+  return {
+      \ 'boxed':    [f . ': %s' . s:ph, ''],
+      \ 'nonboxed': [f . ': %s' . s:ph, ''],
+      \ 'simple':   [s . '%s:' . s:ph],
+      \ 'minimal':  [s . '%s:' . s:ph, ''],
+      \}
+endfun
+
 fun! s:go.rtypeFmt() abort
   let rtype = substitute(self.parsed.rtype, '^(', '', '')
   let rtype = substitute(rtype, ')$', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
-  return [self.JollyChar() . 'return: ' . rtype . ' ' . s:ph]
+  return [self.jollyChar() . 'return: ' . rtype . ' ' . s:ph]
+endfun
+
+fun! s:go.paramsNames() abort
+  let params = substitute(self.parsed.params, '<.\{-}>', '', 'g')
+  let params = substitute(params, '\s*=\s*[^,]\+', '', 'g')
+  return map(split(params, ','), { k,v -> split(v)[0] })
 endfun "}}}
 
 
