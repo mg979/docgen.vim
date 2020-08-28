@@ -253,12 +253,12 @@ endfun "}}}
 ""
 fun! s:Doc.parse() abort
   "{{{1
-  let self.startLn = self.search_target()
+  let [self.startLn, self.endLn] = self.search_target()
   if !self.startLn
     return 0
   endif
   let [g1, g2, g3, g4] = self.groups()
-  let all  = matchlist(getline(self.startLn), self.pattern)[1:]
+  let all  = matchlist(join(getline(self.startLn, self.endLn), "\n"), self.pattern)[1:]
   let self.parsed.type    = trim(all[g1])
   let self.parsed.name    = trim(all[g2])
   let self.parsed.params  = trim(all[g3])
@@ -276,16 +276,20 @@ endfun "}}}
 ""
 fun! s:Doc.search_target() abort
   "{{{1
-  let startLn = 0
+  let [startLn, endLn] = [0, 0]
   let emptyLn = search('^\s*$', 'cnbW')
   let minLn = emptyLn ? '\%>' . emptyLn . 'l' : ''
   for p in self.make_parsers()
     if !startLn || search(minLn . p, 'cnbW') > startLn
       let startLn = search(minLn . p, 'cnbW')
+      let endLn = search(minLn . p, 'cnbeW')
+      if !endLn || endLn < startLn
+        let endLn = search(minLn . p, 'cneW')
+      endif
       let self.pattern = p
     endif
   endfor
-  return startLn
+  return [startLn, endLn]
 endfun "}}}
 
 
