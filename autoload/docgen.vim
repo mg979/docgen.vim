@@ -31,15 +31,15 @@ fun! docgen#box(bang, count) abort
     call doc.style.apply()
   endif
 
-  let is_comment = doc.is_comment(line('.'))
+  let doc.was_comment = doc.is_comment(line('.'))
   let lines = doc.create_box(doc.replace_comment(), doc.comment()[3])
-  exe 'silent' (is_comment ? '-1': '') . 'put =lines'
+  exe 'silent' (doc.was_comment ? '-1': '') . 'put =lines'
 
   call doc.reindent_box(lines)
   normal! `[
   exe 'normal!' (doc.style.extraHeight + 1) . 'j'
   " could be a converted comment
-  let @= = is_comment ? '""' : '"A"'
+  let @= = doc.was_comment ? '""' : '"A "'
 endfun "}}}
 
 
@@ -153,7 +153,7 @@ fun! s:new(is_docstring) abort
     let s:{&filetype} = extend(get(s:, &filetype, {}), b:docgen)
   endif
 
-  let doc = extend(deepcopy(s:Doc), s:{&filetype})
+  let doc = extend(deepcopy(s:Doc), s:FT())
   let doc.style = s:Style
   let doc.style.is_docstring = a:is_docstring
   " so that s:Style can access the current instance
@@ -215,7 +215,7 @@ fun! s:Doc.boxed()
   " {{{1
   let style = self.style.get_style()
   return self.style.is_docstring ? style == 'boxed'
-        \                        : style == 'box' || style == 'large_box'
+        \                        : style =~ 'box'
 endfun "}}}
 
 fun! s:Doc.minimal()
@@ -225,7 +225,7 @@ endfun "}}}
 
 fun! s:Doc.below()
   " {{{1
-  return get(s:{&filetype}, '_putBelow', self.putBelow())
+  return get(s:FT(), '_putBelow', self.putBelow())
 endfun "}}}
 
 
@@ -253,17 +253,17 @@ endfun "}}}
 ""
 fun! s:Doc.parse() abort
   "{{{1
-  let startLn = self.search_target()
-  if !startLn
+  let self.startLn = self.search_target()
+  if !self.startLn
     return 0
   endif
   let [g1, g2, g3, g4] = self.groups()
-  let all  = matchlist(getline(startLn), self.pattern)[1:]
+  let all  = matchlist(getline(self.startLn), self.pattern)[1:]
   let self.parsed.type    = trim(all[g1])
   let self.parsed.name    = trim(all[g2])
   let self.parsed.params  = trim(all[g3])
   let self.parsed.rtype   = trim(all[g4])
-  return startLn
+  return self.startLn
 endfun "}}}
 
 
@@ -648,7 +648,7 @@ let s:Style = {
 ""
 fun! s:Style.change(...) abort
   "{{{1
-  let ft = s:{&filetype}
+  let ft = s:FT()
   let v = self.is_docstring ? 'dg_current' : 'db_current'
   if a:0
     let ft[v] = a:1 - 1
@@ -671,7 +671,8 @@ endfun "}}}
 ""
 fun! s:Style.change_below() abort
   "{{{1
-  let s:{&filetype}._putBelow = !self.doc.below()
+  let ft = s:FT()
+  let ft._putBelow = !self.doc.below()
 endfun "}}}
 
 ""
@@ -717,8 +718,8 @@ endfun "}}}
 ""
 fun! s:Style.get_current() abort
   "{{{1
-  return self.is_docstring ? get(s:{&filetype}, 'dg_current', 0)
-        \                  : get(s:{&filetype}, 'db_current', 0)
+  return self.is_docstring ? get(s:FT(), 'dg_current', 0)
+        \                  : get(s:FT(), 'db_current', 0)
 endfun "}}}
 
 ""
@@ -726,9 +727,9 @@ endfun "}}}
 ""
 fun! s:Style.get_list() abort
   "{{{1
-  return self.is_docstring ? get(s:{&filetype}, 'docstring_styles', self.docstring) :
-        \self.is_boxed     ? filter(copy(get(s:{&filetype}, 'box_styles', self.box)), { k,v -> v =~ 'box' })
-        \                  : filter(copy(get(s:{&filetype}, 'box_styles', self.box)), { k,v -> v !~ 'box' })
+  return self.is_docstring ? get(s:FT(), 'docstring_styles', self.docstring) :
+        \self.is_boxed     ? filter(copy(get(s:FT(), 'box_styles', self.box)), { k,v -> v =~ 'box' })
+        \                  : filter(copy(get(s:FT(), 'box_styles', self.box)), { k,v -> v !~ 'box' })
 endfun "}}}
 
 
@@ -883,6 +884,13 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Helpers
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+""
+" the filetype-specific settings, if available
+""
+fun! s:FT()
+  return get(s:, &filetype, {})
+endfun
 
 ""
 " s:docstring_words: return a pattern that matches docstring-specific words
