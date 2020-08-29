@@ -174,7 +174,7 @@ endfun "}}}
 " default formatters for docstring lines
 let s:Doc.headerFmt   = { -> {
       \ 'boxed':    ['Function: %s' . s:ph, ''],
-      \ 'nonboxed': ['Function: %s' . s:ph, ''],
+      \ 'default':  ['Function: %s' . s:ph, ''],
       \ 'simple':   ['%s:' . s:ph],
       \ 'minimal':  ['%s:' . s:ph, ''],
       \} }
@@ -198,6 +198,8 @@ let s:Doc.rtypePat  = { -> '\s*\(.*\)\?' }
 " default order for patterns, and the group they match in matchlist()
 let s:Doc.order     = { -> ['type', 'name', 'params', 'rtype'] }
 
+" default sections of the docstring
+let s:Doc.sections  = { -> ['header', 'params', 'rtype'] }
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -216,9 +218,7 @@ endfun "}}}
 
 fun! s:Doc.boxed()
   " {{{1
-  let style = self.style.get_style()
-  return self.style.is_docstring ? style == 'boxed'
-        \                        : style =~ 'box'
+  return self.style.get_style() =~ 'box'
 endfun "}}}
 
 fun! s:Doc.minimal()
@@ -249,8 +249,7 @@ endfun "}}}
 " For example, if 'type' comes first in the order, parsed.type will be the
 " variable that is assigned to the first matched group.
 "
-" Which variable will be assigned to which group, depends on the results of the
-" functions doc.groups() and doc.order().
+" Which variable will be assigned to which group, depends doc.order().
 "
 " @return: the line number with the function declaration
 ""
@@ -260,12 +259,12 @@ fun! s:Doc.parse() abort
   if !self.startLn
     return 0
   endif
-  let [g1, g2, g3, g4] = self.groups()
   let all  = matchlist(join(getline(self.startLn, self.endLn), "\n"), self.pattern)[1:]
-  let self.parsed.type    = trim(all[g1])
-  let self.parsed.name    = trim(all[g2])
-  let self.parsed.params  = trim(all[g3])
-  let self.parsed.rtype   = trim(all[g4])
+  let ix = 0
+  for group in self.order()
+    let self.parsed[group] = trim(all[ix])
+    let ix += 1
+  endfor
   return self.startLn
 endfun "}}}
 
@@ -297,23 +296,6 @@ endfun "}}}
 
 
 ""
-" Function: s:Doc.groups
-"
-" @return: the groups that must be matched my matchlist() in doc.parse()
-""
-fun! s:Doc.groups() abort
-  "{{{1
-  let o = self.order()
-  return filter([
-        \ index(o, 'type'),
-        \ index(o, 'name'),
-        \ index(o, 'params'),
-        \ index(o, 'rtype'),
-        \], 'v:val != -1')
-endfun "}}}
-
-
-""
 " Function: s:Doc.make_parsers
 " Format the parsers with printf(), replacing the placeholders with the
 " specific patterns for the current filetype.
@@ -325,9 +307,10 @@ fun! s:Doc.make_parsers() abort
   let d = self
   let parsers = []
   let u_parsers = d.parsers()
-  let [p1, p2, p3, p4] = self.ordered_patterns()
+  let pats = join(map(self.ordered_patterns(), { k,v -> string(v) }), ',')
   for p in range(len(u_parsers))
-    call add(parsers, printf(u_parsers[p], p1, p2, p3, p4))
+    let P = eval('printf(u_parsers[p],' . pats .')')
+    call add(parsers, P)
   endfor
   return parsers
 endfun "}}}
@@ -340,11 +323,9 @@ endfun "}}}
 ""
 fun! s:Doc.ordered_patterns() abort
   "{{{1
+  let s = self
   let o = self.order()
-  return [ eval('self.'.o[0].'Pat()'),
-        \  eval('self.'.o[1].'Pat()'),
-        \  eval('self.'.o[2].'Pat()'),
-        \  eval('self.'.o[3].'Pat()') ]
+  return map(o, { k,v -> eval('s.'.o[k].'Pat()') })
 endfun "}}}
 
 
@@ -355,7 +336,7 @@ endfun "}}}
 
 fun! s:Doc.make_templates() abort
   let style = self.style.get_style()
-  for x in ['header', 'params', 'rtype']
+  for x in self.sections()
     let fmt = eval('self.'.x.'Fmt()')
     let self.templates[x] = type(fmt) == v:t_dict ? fmt[style] : fmt
   endfor
@@ -372,7 +353,6 @@ fun! s:Doc.format() abort
   let self.lines.params = self.paramsLines()
   let self.lines.return = self.retLines()
   let self.lines.header = self.headerLines()
-
   return self.lines.header + s:align(self.lines.params) + self.lines.return
 endfun
 
@@ -675,7 +655,7 @@ endfun "}}}
 ""
 
 let s:Style = {
-      \  'docstring': ['nonboxed', 'boxed', 'simple', 'minimal'],
+      \  'docstring': ['default', 'boxed', 'simple', 'minimal'],
       \  'box': ['simple', 'box', 'large_simple', 'large_box', 'fullbox', 'fullbox_centered'],
       \}
 
@@ -820,7 +800,7 @@ fun! s:c.rtypeFmt() abort
   endif
   return {
       \ 'boxed':    ['', 'Returns ' . self.parsed.rtype . ': ' . s:ph],
-      \ 'nonboxed': ['', 'Returns ' . self.parsed.rtype . ': ' . s:ph],
+      \ 'default':  ['', 'Returns ' . self.parsed.rtype . ': ' . s:ph],
       \ 'simple':   ['', 'Returns: ' . s:ph],
       \ 'minimal':  [],
       \}
@@ -829,7 +809,7 @@ endfun
 fun! s:c.paramsFmt() abort
   return {
         \ 'boxed':    [self.jollyChar() . 'param %s: ' . s:ph],
-        \ 'nonboxed': [self.jollyChar() . 'param %s: ' . s:ph],
+        \ 'default':  [self.jollyChar() . 'param %s: ' . s:ph],
         \ 'simple':   ['%s: ' . s:ph],
         \ 'minimal':  [],
         \}
@@ -838,7 +818,7 @@ endfun
 fun! s:c.headerFmt()
   return {
       \ 'boxed':    ['%s', s:ph],
-      \ 'nonboxed': ['%s', s:ph],
+      \ 'default':  ['%s', s:ph],
       \ 'simple':   ['%s', s:ph],
       \ 'minimal':  ['%s:' . s:ph],
       \}
