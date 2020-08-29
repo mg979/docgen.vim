@@ -78,11 +78,6 @@ fun! docgen#func(bang, count) abort
     call doc.style.apply()
   endif
 
-  if ft == 'cpp'
-    call doxygen#comment_func(doc)
-    return
-  endif
-
   " if the parsers can't find a target, abort
   let startLn = doc.parse()
   if !startLn | return | endif
@@ -352,8 +347,12 @@ fun! s:Doc.format() abort
   " process params and return first, if absent the docstring will be reduced
   let self.lines.params = self.paramsLines()
   let self.lines.return = self.retLines()
+  let self.lines.detail = self.detailLines()
   let self.lines.header = self.headerLines()
-  return self.lines.header + s:align(self.lines.params) + self.lines.return
+  if self.minimal()
+    return filter(self.lines.header, { k,v -> v != '' })
+  endif
+  return self.lines.header + s:align(self.lines.params) + self.lines.detail + self.lines.return
 endfun
 
 ""
@@ -402,9 +401,6 @@ endfun "}}}
 ""
 fun! s:Doc.paramsLines() abort
   "{{{1
-  if empty(self.templates.params) || self.minimal()
-    return []
-  endif
   let lines = []
   for param in self.paramsNames()
     for line in self.templates.params
@@ -416,6 +412,17 @@ endfun "}}}
 
 
 ""
+" Function: s:Doc.detailLines
+" Additional lines for more detailed description. Empty by default.
+"
+" @return: the formatted line(s) with the placeholder.
+""
+fun! s:Doc.detailLines() abort
+  "{{{1
+  return []
+endfun "}}}
+
+""
 " Function: s:Doc.retLines
 " By default there's no text replacement in the return line, so the template is
 " returned as it it.
@@ -424,7 +431,7 @@ endfun "}}}
 ""
 fun! s:Doc.retLines() abort
   "{{{1
-  return self.minimal() ? [] : self.templates.rtype
+  return self.templates.rtype
 endfun "}}}
 
 
@@ -655,8 +662,8 @@ endfun "}}}
 ""
 
 let s:Style = {
-      \  'docstring': ['default', 'boxed', 'simple', 'minimal'],
-      \  'box': ['simple', 'box', 'large_simple', 'large_box', 'fullbox', 'fullbox_centered'],
+      \  'docstyles': { -> ['default', 'boxed', 'simple', 'minimal'] },
+      \  'boxstyles': { -> ['simple', 'box', 'large_simple', 'large_box', 'fullbox', 'fullbox_centered'] },
       \}
 
 ""
@@ -666,7 +673,7 @@ let s:Style = {
 fun! s:Style.change(...) abort
   "{{{1
   let ft = s:FT()
-  let v = self.is_docstring ? 'dg_current' : 'db_current'
+  let v = self.is_docstring ? '_dg_current' : '_db_current'
   if a:0
     let ft[v] = a:1 - 1
   else
@@ -735,8 +742,8 @@ endfun "}}}
 ""
 fun! s:Style.get_current() abort
   "{{{1
-  return self.is_docstring ? get(s:FT(), 'dg_current', 0)
-        \                  : get(s:FT(), 'db_current', 0)
+  return self.is_docstring ? get(s:FT(), '_dg_current', 0)
+        \                  : get(s:FT(), '_db_current', 0)
 endfun "}}}
 
 ""
@@ -744,9 +751,9 @@ endfun "}}}
 ""
 fun! s:Style.get_list() abort
   "{{{1
-  return self.is_docstring ? get(s:FT(), 'docstring_styles', self.docstring) :
-        \self.is_boxed     ? filter(copy(get(s:FT(), 'box_styles', self.box)), { k,v -> v =~ 'box' })
-        \                  : filter(copy(get(s:FT(), 'box_styles', self.box)), { k,v -> v !~ 'box' })
+  return self.is_docstring ? get(s:FT(), 'docstyles', self.docstyles)() :
+        \self.is_boxed     ? filter(copy(get(s:FT(), 'boxstyles', self.boxstyles)()), { k,v -> v =~ 'box' })
+        \                  : filter(copy(get(s:FT(), 'boxstyles', self.boxstyles)()), { k,v -> v !~ 'box' })
 endfun "}}}
 
 
@@ -763,11 +770,12 @@ endfun "}}}
 
 let s:c = {
       \ 'parsers':   { -> ['^%s%s\n\?%s%s\s*\n\?[{;]'] },
-      \ 'namePat':   { -> '\s*\(\w\+\|\*\?(\*?(\w\+)\)' },
+      \ 'namePat':   { -> '\s*\*\?\(\w\+\)' },
       \ 'paramsPat': { -> '\s*(\(.\{-}\))' },
       \ 'typePat':   { -> '\(\%(extern\|static\|inline\)\s*\)*' },
-      \ 'rtypePat':  { -> '\s*\(.\{-}\)' },
+      \ 'rtypePat':  { -> '\s*\(\S\+\)\%(\s\+\|\n\)' },
       \ 'order':     { -> ['type', 'rtype', 'name', 'params'] },
+      \ 'docstyles': { -> ['kernel', 'kernelboxed', 'default', 'boxed', 'simple', 'minimal'] },
       \}
 
 "{{{1
@@ -782,53 +790,94 @@ let s:c = {
 "
 " Then you can replace other methods.
 "
-" Functions with xxxFmt() are called first, when the style is applied. For
-" maximum flexibility, they should return a dictionary with the available
-" styles as keys, and the desired format as value. Sometimes you may just want
-" to return nothing (that is an empty list).
+" Methods with xxxFmt() are called first, when the style is applied and
+" templates are generated. For maximum flexibility, they can return
+" a dictionary with the available styles as keys, and the desired format as
+" value. When they return a simple list, the same format is used for all
+" styles. Sometimes you may just want to return nothing (an empty list).
+"
+" During template generation, 'self.templates' is generated, with a template
+" for each section (see s:Doc.sections).
 "
 " paramsNames() is called after the parameters have been parsed. It is used to
 " refine how the parameters will be displayed, removing unwanted parts that
 " have been parsed.
 "
-" Functions with xxxLines() are called last, and return the lines as they will
-" be printed.
+" After the parsing has been done, the 'self.parsed' dictionary is generated.
+" Its keys are the same as the types in the 'self.order()' list.
+"
+" Methods with xxxLines() are called last, and return the lines as they will
+" be printed. They should access the self.templates[section] and format them
+" with the contents of the self.parsed dictionary.
 ""
 fun! s:c.rtypeFmt() abort
   if self.parsed.rtype == 'void'
     return []
   endif
+  let [rtype, ch] = [self.parsed.rtype, self.jollyChar()]
   return {
-      \ 'boxed':    ['', 'Returns ' . self.parsed.rtype . ': ' . s:ph],
-      \ 'default':  ['', 'Returns ' . self.parsed.rtype . ': ' . s:ph],
-      \ 'simple':   ['', 'Returns: ' . s:ph],
-      \ 'minimal':  [],
-      \}
+        \ 'kernel':      ['Returns ' . rtype . ': ' . s:ph],
+        \ 'kernelboxed': ['Returns ' . rtype . ': ' . s:ph],
+        \ 'boxed':       [ch . 'return ' . rtype . ': ' . s:ph],
+        \ 'default':     [ch . 'return ' . rtype . ': ' . s:ph],
+        \ 'simple':      [ch . 'return: ' . s:ph],
+        \ 'minimal':     [],
+        \}
 endfun
 
 fun! s:c.paramsFmt() abort
+  let ch = self.jollyChar()
   return {
-        \ 'boxed':    [self.jollyChar() . 'param %s: ' . s:ph],
-        \ 'default':  [self.jollyChar() . 'param %s: ' . s:ph],
-        \ 'simple':   ['%s: ' . s:ph],
-        \ 'minimal':  [],
+        \ 'kernel':      [ch . '%s: ' . s:ph],
+        \ 'kernelboxed': [ch . '%s: ' . s:ph],
+        \ 'boxed':       [ch . 'param %s: ' . s:ph],
+        \ 'default':     [ch . 'param %s: ' . s:ph],
+        \ 'simple':      ['%s', s:ph],
+        \ 'minimal':     ['%s:' . s:ph],
         \}
 endfun
 
 fun! s:c.headerFmt()
+  let ch = self.jollyChar()
   return {
-      \ 'boxed':    ['%s', s:ph],
-      \ 'default':  ['%s', s:ph],
-      \ 'simple':   ['%s', s:ph],
-      \ 'minimal':  ['%s:' . s:ph],
-      \}
+        \ 'kernel':      ['%s() - ' . s:ph],
+        \ 'kernelboxed': ['%s() - ' . s:ph],
+        \ 'boxed':       [ch . 'brief %s: ' . s:ph],
+        \ 'default':     [ch . 'brief %s: ' . s:ph],
+        \ 'simple':      ['%s', s:ph],
+        \ 'minimal':     ['%s:' . s:ph],
+        \}
+endfun
+
+""
+" s:c._params_names
+" This helper will also be used by cpp. If the parameter name is omitted, the
+" parameter type is used, but enclosed in square brackets.
+""
+fun! s:c._params_names(...) abort
+  " remove inline comments
+  let params = substitute(a:1, '/\*.\{-}\*/', '', 'g')
+  let names = []
+  for p in split(params, ',')
+    let _p = split(p)
+    if len(_p) > 1
+      call add(names, substitute(_p[-1], '^[*&]', '', ''))
+    else
+      call add(names, '[' . _p[0] . ']')
+    endif
+  endfor
+  return names
 endfun
 
 fun! s:c.paramsNames() abort
   if self.parsed.params == 'void'
     return []
   endif
-  return map(split(self.parsed.params, ','), { k,v -> substitute(split(v)[-1], '^\*', '', '') })
+  return self._params_names(self.parsed.params)
+endfun
+
+fun! s:c.detailLines() abort
+  return self.style.get_style() =~ 'kernel' ? ['', s:ph] : []
 endfun
 
 fun! s:c.headerLines() abort
@@ -842,22 +891,25 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:cpp = extend(copy(s:c), {
-      \ 'parsers':    { -> ['^%s%s%s\n\?%s%s\s*\%(=\s*.*\)\?\n\?[{;]'] },
-      \ 'typePat':    { -> '\(\%(extern\|static\|inline\|explicit\|virtual\|class\|struct\|volatile\|const\)\s*\)*' },
+      \ 'parsers':    { -> ['^%s%s%s\n\?%s%s\s*\%(=\s*.*\|\w\+\s*\)\?\n\?[{;]'] },
+      \ 'typePat':    { -> '\(\%(extern\|static\|inline\|explicit\|virtual\|volatile\|const\)\s*\)*' },
       \ 'tparamsPat': { -> '\%(\s*template\s*<\(.*\)>\n\)\?' },
-      \ 'namePat':    { -> '\s*\%(\w\+::\)\?\(\w\+\|\*\?(\*?(\w\+)\)' },
-      \ 'paramsPat':  { -> '\s*<\?(\(.\{-}\))\%(\s*\w\+\)\?' },
+      \ 'namePat':    { -> '\s*\%(\w\+::\)\?\*\?\(\w\+\)<\?' },
+      \ 'paramsPat':  { -> '\s*(\(.\{-}\))' },
       \ 'order':      { -> ['tparams', 'type', 'rtype', 'name', 'params'] },
       \ 'sections':   { -> ['header', 'tparams', 'params', 'rtype'] }
       \})
 
 "{{{1
 fun! s:cpp.tparamsFmt() abort
+  let ch = self.jollyChar()
   return {
-        \ 'boxed':    [self.jollyChar() . 'tparam %s: ' . s:ph],
-        \ 'default':  [self.jollyChar() . 'tparam %s: ' . s:ph],
-        \ 'simple':   ['%s: ' . s:ph],
-        \ 'minimal':  [],
+        \ 'kernel':      [ch . '%s: ' . s:ph],
+        \ 'kernelboxed': [ch . '%s: ' . s:ph],
+        \ 'boxed':       [ch . 'tparam %s: ' . s:ph],
+        \ 'default':     [ch . 'tparam %s: ' . s:ph],
+        \ 'simple':      ['%s: ' . s:ph],
+        \ 'minimal':     [],
         \}
 endfun
 
@@ -866,32 +918,38 @@ fun! s:cpp.headerFmt()
   let f = m == '' ? 'Function' : '[' . m . '] Method'
   let s = m == '' ? '' : m . '.'
   return {
-      \ 'boxed':    [f . ': %s' . s:ph, ''],
-      \ 'default':  [f . ': %s' . s:ph, ''],
-      \ 'simple':   [s . '%s:' . s:ph],
-      \ 'minimal':  [s . '%s:' . s:ph, ''],
-      \}
+        \ 'kernel':      [s . '%s() - ' . s:ph],
+        \ 'kernelboxed': [s . '%s() - ' . s:ph],
+        \ 'boxed':       [self.jollyChar() . 'brief %s: ' . s:ph, ''],
+        \ 'default':     [self.jollyChar() . 'brief %s: ' . s:ph, ''],
+        \ 'simple':      [s . '%s:' . s:ph],
+        \ 'minimal':     [s . '%s:' . s:ph, ''],
+        \}
 endfun
 
-fun! s:cpp._names(...) abort
-  let names = substitute(a:1, '<.\{-}>', '', 'g')
-  let names = substitute(names, '/\*.\{-}\*/', '', 'g')
-  let names = substitute(names, '\s*=\s*[^,]\+', '', 'g')
-  return map(split(names, ','), { k,v -> substitute(split(v)[-1], '^[*&]', '', '') })
+""
+" s:cpp._clean_params
+" Clean up both params and tparams by removing text in angle brackets and
+" parameters default values.
+""
+fun! s:cpp._clean_params(...) abort
+  let params = substitute(a:1, '<.\{-}>', '', 'g')
+  let params = substitute(params, '\s*=\s*[^,]\+', '', 'g')
+  return params
 endfun
 
 fun! s:cpp.tparamsNames() abort
-  return self._names(self.parsed.tparams)
+  return self._params_names(self._clean_params(self.parsed.tparams))
 endfun
 
 fun! s:cpp.paramsNames() abort
-  return self._names(self.parsed.params)
+  if self.parsed.params == 'void'
+    return []
+  endif
+  return self._params_names(self._clean_params(self.parsed.params))
 endfun
 
 fun! s:cpp.paramsLines() abort
-  if empty(self.templates.params) && empty(self.templates.tparams) || self.minimal()
-    return []
-  endif
   let lines = []
   for arg in self.tparamsNames()
     for line in self.templates.tparams
@@ -907,8 +965,7 @@ fun! s:cpp.paramsLines() abort
 endfun
 
 fun! s:cpp.retLines() abort
-  return self.minimal() || !empty(self.parsed.tparams) ? [] :
-        \ empty(self.parsed.params) ? self.templates.rtype[-1:] : self.templates.rtype
+  return !empty(self.parsed.tparams) ? [] : self.templates.rtype
 endfun "}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -922,12 +979,8 @@ fun! s:vim.frameChar() abort
   return self.style.is_docstring ? '=' : '"'
 endfun
 
-""
-" don't add the @return line if no meaningful return value
-""
 fun! s:vim.retLines() abort
-  return self.minimal() ? [] :
-        \ search('return\s*[[:alnum:]_([{''"]', 'nW', search('^endf', 'nW'))
+  return search('return\s*[[:alnum:]_([{''"]', 'nW', search('^endf', 'nW'))
         \ ? self.templates.rtype : []
 endfun "}}}
 
@@ -942,18 +995,14 @@ let s:lua = {
 fun! s:lua.headerLines() abort
   let style   = self.style.get_style()
   let oneline = empty(self.lines.params) && empty(self.lines.return)
-
-  return style == 'minimal' || style == 'simple' || oneline
+  return
+        \ style == 'minimal' || style == 'simple' || oneline
         \ ? [self.parsed.name . s:ph]
         \ : map(self.templates.header, { k,v -> v =~ '%s' ? printf(v, self.parsed.name) : v })
 endfun
 
-""
-" don't add the @return line if no meaningful return value
-""
 fun! s:lua.retLines() abort
-  return self.minimal() ? [] :
-        \ search('return\s*[[:alnum:]_([{''"]', 'nW', search('^end', 'nW'))
+  return search('return\s*[[:alnum:]_([{''"]', 'nW', search('^end', 'nW'))
         \ ? self.templates.rtype : []
 endfun "}}}
 
