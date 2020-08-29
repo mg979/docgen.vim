@@ -473,7 +473,7 @@ fun! s:Doc.preserve_oldlines(lines, oldlines) abort
     let ol = a:oldlines[o]
     " if the old line looks like @param, @rtype, etc, it's been generated and
     " we've already handled it
-    if ol =~ s:docstring_words(['param', 'return', 'rtype'])
+    if ol =~ s:docstring_words(['t\?param', 'return', 'rtype'])
       continue
     endif
     if index(a:lines, ol) < 0
@@ -841,7 +841,75 @@ endfun "}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-let s:cpp = {}
+let s:cpp = extend(copy(s:c), {
+      \ 'parsers':    { -> ['^%s%s%s\n\?%s%s\s*\%(=\s*.*\)\?\n\?[{;]'] },
+      \ 'typePat':    { -> '\(\%(extern\|static\|inline\|explicit\|virtual\|class\|struct\|volatile\|const\)\s*\)*' },
+      \ 'tparamsPat': { -> '\%(\s*template\s*<\(.*\)>\n\)\?' },
+      \ 'namePat':    { -> '\s*\%(\w\+::\)\?\(\w\+\|\*\?(\*?(\w\+)\)' },
+      \ 'paramsPat':  { -> '\s*<\?(\(.\{-}\))\%(\s*\w\+\)\?' },
+      \ 'order':      { -> ['tparams', 'type', 'rtype', 'name', 'params'] },
+      \ 'sections':   { -> ['header', 'tparams', 'params', 'rtype'] }
+      \})
+
+"{{{1
+fun! s:cpp.tparamsFmt() abort
+  return {
+        \ 'boxed':    [self.jollyChar() . 'tparam %s: ' . s:ph],
+        \ 'default':  [self.jollyChar() . 'tparam %s: ' . s:ph],
+        \ 'simple':   ['%s: ' . s:ph],
+        \ 'minimal':  [],
+        \}
+endfun
+
+fun! s:cpp.headerFmt()
+  let m = matchstr(getline(self.startLn), '^\s*\%(\w\+\s*\)\?\zs\w\+\ze::')
+  let f = m == '' ? 'Function' : '[' . m . '] Method'
+  let s = m == '' ? '' : m . '.'
+  return {
+      \ 'boxed':    [f . ': %s' . s:ph, ''],
+      \ 'default':  [f . ': %s' . s:ph, ''],
+      \ 'simple':   [s . '%s:' . s:ph],
+      \ 'minimal':  [s . '%s:' . s:ph, ''],
+      \}
+endfun
+
+fun! s:cpp._names(...) abort
+  let names = substitute(a:1, '<.\{-}>', '', 'g')
+  let names = substitute(names, '/\*.\{-}\*/', '', 'g')
+  let names = substitute(names, '\s*=\s*[^,]\+', '', 'g')
+  return map(split(names, ','), { k,v -> substitute(split(v)[-1], '^[*&]', '', '') })
+endfun
+
+fun! s:cpp.tparamsNames() abort
+  return self._names(self.parsed.tparams)
+endfun
+
+fun! s:cpp.paramsNames() abort
+  return self._names(self.parsed.params)
+endfun
+
+fun! s:cpp.paramsLines() abort
+  if empty(self.templates.params) && empty(self.templates.tparams) || self.minimal()
+    return []
+  endif
+  let lines = []
+  for arg in self.tparamsNames()
+    for line in self.templates.tparams
+      call add(lines, line =~ '%s' ? printf(line, trim(arg)) : line)
+    endfor
+  endfor
+  for param in self.paramsNames()
+    for line in self.templates.params
+      call add(lines, line =~ '%s' ? printf(line, trim(param)) : line)
+    endfor
+  endfor
+  return lines
+endfun
+
+fun! s:cpp.retLines() abort
+  return self.minimal() || !empty(self.parsed.tparams) ? [] :
+        \ empty(self.parsed.params) ? self.templates.rtype[-1:] : self.templates.rtype
+endfun "}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
@@ -977,16 +1045,12 @@ let s:go = {
 
 "{{{1
 fun! s:go.headerFmt()
-  let ln = getline(self.startLn)
-  let f = match(ln, '^\s*func\s*(') >= 0
-        \ ? '[' . matchstr(ln, '^\s*func\s*(.\{-}\s\+\zs.\{-}\ze)') . '] Method'
-        \ : 'Function'
-  let s = match(ln, '^\s*func\s*(') >= 0
-        \ ? matchstr(ln, '^\s*func\s*(.\{-}\s\+\zs.\{-}\ze)') . '.'
-        \ : ''
+  let m = matchstr(getline(self.startLn), '^\s*func\s*(.\{-}\s\+\*\?\zs.\{-}\ze)')
+  let f = m == '' ? 'Function' : '[' . m . '] Method'
+  let s = m == '' ? '' : m . '.'
   return {
       \ 'boxed':    [f . ': %s' . s:ph, ''],
-      \ 'nonboxed': [f . ': %s' . s:ph, ''],
+      \ 'default':  [f . ': %s' . s:ph, ''],
       \ 'simple':   [s . '%s:' . s:ph],
       \ 'minimal':  [s . '%s:' . s:ph, ''],
       \}
