@@ -1056,14 +1056,14 @@ let s:sh = {
 let s:java = {
       \ 'parsers':  { -> ['^\s*%s%s%s%s\s*[;{]'] },
       \ 'typePat':  { -> '\(\%(public\|private\|protected\|static\|final\)\s*\)*' },
-      \ 'rtypePat': { -> '\s*\(\S\+\)\s\+' },
+      \ 'rtypePat': { -> '\s*\(\S\+\)\?\s\+' },
       \ 'order':    { -> ['type', 'rtype', 'name', 'params'] },
       \}
 
 "{{{1
 
 fun! s:java.rtypeFmt() abort
-  if self.parsed.rtype == 'void'
+  if self.parsed.rtype == 'void' || self.parsed.rtype == ''
     return []
   elseif self.parsed.rtype !~ '\S'
     return [self.jollyChar() . 'return: ' . s:ph]
