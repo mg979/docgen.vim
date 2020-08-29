@@ -388,6 +388,9 @@ endfun "}}}
 ""
 fun! s:Doc.paramsNames() abort
   "{{{1
+  if !has_key(self.parsed, 'params')
+    return []
+  endif
   let params = substitute(self.parsed.params, '<.\{-}>', '', 'g')
   let params = substitute(params, '\s*=\s*[^,]\+', '', 'g')
   return split(params, ',')
@@ -1048,8 +1051,15 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:sh = {
-      \ 'parsers': { -> ['^function\s%s%s%s%s', '^%s%s%s%s'] },
+      \ 'parsers': { -> ['^\s*function\s*%s\n\?\s*{', '^\s*%s()\n\?\s*{'] },
+      \ 'order':    { -> ['name'] },
       \}
+
+"{{{1
+fun! s:sh.retLines() abort
+  return search('return\s*[[:alnum:]_([{''"]', 'nW', search('^\s*}', 'nW'))
+        \ ? self.templates.rtype : []
+endfun "}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
