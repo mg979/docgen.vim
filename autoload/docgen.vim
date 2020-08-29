@@ -266,24 +266,38 @@ endfun "}}}
 
 ""
 " Function: s:Doc.search_target
+"
 " Search the closest target upwards, if it can be found set the current pattern
-" to the one that found it.
+" to the one that found it. When searching we don't move the cursor: we ensure
+" that the match has a valid start and a valid end. The start must be on the
+" same line or before it, the end can be after the current line. In both cases
+" the searchs stops at empty lines, unless the search pattern includes '\n', in
+" that case the search won't fail.
 "
 " @return: the line number with the docstring target
 ""
 fun! s:Doc.search_target() abort
   "{{{1
   let [startLn, endLn] = [0, 0]
+
   let emptyLn = search('^\s*$', 'cnbW')
   let minLn = emptyLn ? '\%>' . emptyLn . 'l' : ''
+  let emptyLn = search('^\s*$', 'cnW')
+  let maxLn = emptyLn ? '\%<' . emptyLn . 'l' : ''
+  let limit = minLn . maxLn
+
   for p in self.make_parsers()
-    if !startLn || search(minLn . p, 'cnbW') > startLn
-      let startLn = search(minLn . p, 'cnbW')
-      let endLn = search(minLn . p, 'cnbeW')
+    if !startLn || search(limit . p, 'cnbW') > startLn
+      let startLn = search(limit . p, 'cnbW')
+      let endLn = search(limit . p, 'cnbeW')
       if !endLn || endLn < startLn
-        let endLn = search(minLn . p, 'cneW')
+        let endLn = search(limit . p, 'cneW')
       endif
-      let self.pattern = p
+      if !endLn
+        let startLn = 0
+      else
+        let self.pattern = p
+      endif
     endif
   endfor
   return [startLn, endLn]
