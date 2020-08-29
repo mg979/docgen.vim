@@ -1,0 +1,71 @@
+----
+-- Function: new_function$PLACEHOLDER
+--
+-- @param p1: $PLACEHOLDER
+-- @param p2: $PLACEHOLDER
+-- @param p3: $PLACEHOLDER
+-- @param p4: $PLACEHOLDER
+----
+function new_function(p1, p2, p3, p4)
+end
+
+----
+-- Function: new_function$PLACEHOLDER
+--
+-- @param p1: $PLACEHOLDER
+-- @param p2: $PLACEHOLDER
+-- @param p3: $PLACEHOLDER
+----
+local function new_function(p1, p2, p3)
+end
+
+----
+-- Function: BotDetectionHandler:access$PLACEHOLDER
+--
+-- @param p1: $PLACEHOLDER
+-- @param p2: $PLACEHOLDER
+-- @param p3: $PLACEHOLDER
+----
+function BotDetectionHandler:access(p1, p2, p3)
+end
+
+-------------------------------------------------------------------------------
+-- Function: myprint$PLACEHOLDER
+--
+-- @param p1: $PLACEHOLDER
+-- @param p2: $PLACEHOLDER
+-------------------------------------------------------------------------------
+myprint = function(p1, p2)
+  print("This is my print function -   ##",param,"##")
+end
+
+-------------------------------------------------------------------------------
+-- Function: myprint$PLACEHOLDER
+--
+-- @param p1: $PLACEHOLDER
+-- @param p2: $PLACEHOLDER
+-- @param p3: $PLACEHOLDER
+-- @param p4: $PLACEHOLDER
+-- @param p5: $PLACEHOLDER
+-------------------------------------------------------------------------------
+local myprint = function(p1, p2, p3, p4, p5)
+  print("This is my print function -   ##",param,"##")
+end
+
+-------------------------------------------------------------------------------
+-- Function: a.b:c$PLACEHOLDER
+--
+-- @param p1: $PLACEHOLDER
+-- @param p2: $PLACEHOLDER
+-------------------------------------------------------------------------------
+function a.b:c (p1, p2) body end
+
+----
+-- a.b.c$PLACEHOLDER
+-- @param self: $PLACEHOLDER
+-- @param p1:   $PLACEHOLDER
+-- @param p2:   $PLACEHOLDER
+----
+a.b.c = function (self, p1, p2) body end
+
+-- vim: ft=lua

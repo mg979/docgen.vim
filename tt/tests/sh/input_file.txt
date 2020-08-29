@@ -1,0 +1,10 @@
+function error {
+  print "error"
+  return 1
+}
+
+test() {
+  print "foobar"
+}
+
+# vim: ft=sh

@@ -1,0 +1,16 @@
+int main(int argc, char *argv[]) {}
+
+int func(int x, int y) {}
+
+void voidFunc();
+
+int
+intFunc(void) {}
+
+bool string_equal(const char *str1, const char *s2);
+
+(*fp) funcReturningFp(void);
+
+(*fp) funcReturningFp(*(*fp) p1, *(*fp) p2);
+
+// vim: ft=c

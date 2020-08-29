@@ -1,0 +1,88 @@
+##
+# $PLACEHOLDER
+# @param p1:  $PLACEHOLDER
+# @param p_2: $PLACEHOLDER
+# @return: $PLACEHOLDER
+##
+def myFunc(p1, p_2 = some_default_value)
+end
+
+##
+# $PLACEHOLDER
+# @param format: $PLACEHOLDER
+# @return: $PLACEHOLDER
+##
+def myFunc (format = :html)
+end
+
+##
+# $PLACEHOLDER
+# @param p1:  $PLACEHOLDER
+# @param p2:  $PLACEHOLDER
+# @param p3*: $PLACEHOLDER
+# @return: $PLACEHOLDER
+##
+def parameters (p1,p2=4, p3*)
+end
+
+##
+# $PLACEHOLDER
+# @param options: $PLACEHOLDER
+# @return: $PLACEHOLDER
+##
+def my_func(options = nil)
+end
+
+module ClassMethods
+  ##
+  # $PLACEHOLDER
+  # @param *: $PLACEHOLDER
+  # @return: $PLACEHOLDER
+  ##
+  def initialize(*)
+  end
+
+  private
+  ##
+  # $PLACEHOLDER
+  # @param name: $PLACEHOLDER
+  # @return: $PLACEHOLDER
+  ##
+  def define_method_attribute=(name)
+  end
+
+  ##
+  # $PLACEHOLDER
+  # @param other: $PLACEHOLDER
+  # @return: $PLACEHOLDER
+  ##
+  def copy!(other)
+  end
+
+  ##
+  # $PLACEHOLDER
+  # @param attribute: $PLACEHOLDER
+  # @param type:      $PLACEHOLDER
+  # @param **options: $PLACEHOLDER
+  # @return: $PLACEHOLDER
+  ##
+  def where(attribute, type = nil, **options)
+  end
+
+  ##
+  # $PLACEHOLDER
+  # @param attribute: $PLACEHOLDER
+  # @return: $PLACEHOLDER
+  ##
+  def [](attribute)
+  end
+
+  ##
+  # $PLACEHOLDER
+  # @param &block: $PLACEHOLDER
+  # @return: $PLACEHOLDER
+  ##
+  def each(&block)
+  end
+
+# vim: ft=ruby

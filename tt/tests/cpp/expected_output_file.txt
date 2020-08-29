@@ -1,0 +1,77 @@
+/**
+ * myFunc() - $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns int: $PLACEHOLDER
+ **/
+int myFunc(void) {}
+
+/**
+ * TestClass.myFunc() - $PLACEHOLDER
+ * @text: $PLACEHOLDER
+ * @node: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns int: $PLACEHOLDER
+ **/
+int TestClass::myFunc(const std::string& text /* inline comment */, const Node* node) {}
+
+/**
+ * f() - $PLACEHOLDER
+ * @p: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ **/
+void f(*(A*) p = this) {}
+
+/**
+ * f() - $PLACEHOLDER
+ * @[int]: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns int: $PLACEHOLDER
+ **/
+int *f(int) {}
+
+/**
+ * PerfectForward() - $PLACEHOLDER
+ * @F:    $PLACEHOLDER
+ * @Args: $PLACEHOLDER
+ * @fun:  $PLACEHOLDER
+ * @args: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ **/
+template<class F, class... Args>
+decltype(auto) PerfectForward(F fun, Args&&... args) {}
+
+/**
+ * operator() - $PLACEHOLDER
+ * @lhs: $PLACEHOLDER
+ * @rhs: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns bool: $PLACEHOLDER
+ **/
+inline bool operator<(const value_t lhs, const value_t rhs) noexcept {}
+
+/**
+ * myFunc() - $PLACEHOLDER
+ * @HandshakeHandler: $PLACEHOLDER
+ * @type:             $PLACEHOLDER
+ * @handler:          $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ **/
+template <typename HandshakeHandler>
+void myFunc(handshake_type type, MOVE_ARG(HandshakeHandler) handler) {}
+
+/**
+ * boolean() - $PLACEHOLDER
+ * @val: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns bool: $PLACEHOLDER
+ **/
+virtual bool boolean(bool val) = 0;
+// vim: ft=cpp

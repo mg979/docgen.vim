@@ -1,0 +1,70 @@
+/**
+ * void (*pf)(int): $PLACEHOLDER
+ **/
+void (*pf)(int);
+
+/**
+ * int *(*x[10])(void): $PLACEHOLDER
+ **/
+int *(*x[10])(void);
+
+/**
+ * struct test: $PLACEHOLDER
+ **/
+struct {
+  int x;
+  int y;
+} test;
+
+/**
+ * struct _test_type: $PLACEHOLDER
+ **/
+struct _test_type {
+  int x;
+  int y;
+};
+
+/**
+ * struct _test_type Test1, Test2: $PLACEHOLDER
+ **/
+struct _test_type {
+  /**
+   * int x, y: $PLACEHOLDER
+   **/
+  int x, y;
+
+  int z;
+} Test1, Test2;
+
+/**
+ * typedef TEST: $PLACEHOLDER
+ **/
+typedef struct {
+  int x;
+  int y;
+} TEST;
+
+/**
+ * typedef TEST: $PLACEHOLDER
+ **/
+typedef struct _test {
+  int x;
+  int y;
+} TEST;
+
+/**
+ * struct tag name: $PLACEHOLDER
+ **/
+struct tag { int i; double d; char *s } name;
+
+/**
+ * union tag name: $PLACEHOLDER
+ **/
+union tag { int i; double d; char *s } name;
+
+/**
+ * enum suit: $PLACEHOLDER
+ **/
+enum suit { CLUBS = 1, DIAMONDS = 2, HEARTS = 3, SPADES = 4 };
+
+// vim: ft=c et sw=2 ts=2 sts=2

@@ -1,0 +1,25 @@
+# c storage types
+
+CMD = r':DocGen\<CR>'
+
+keys(CMD)
+keys('6G')
+keys(CMD)
+keys('11G')
+keys(CMD)
+keys('19G')
+keys(CMD)
+keys('27G')
+keys(CMD)
+keys('31G')
+keys(CMD)
+keys('39G')
+keys(CMD)
+keys('47G')
+keys(CMD)
+keys('55G')
+keys(CMD)
+keys('60G')
+keys(CMD)
+keys('65G')
+keys(CMD)

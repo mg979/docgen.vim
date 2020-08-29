@@ -1,0 +1,39 @@
+class Test {
+	private void setChildrenRecursively(ElementDto childDto, int childId) {
+	}
+
+	void foo();
+
+	@Override
+	private MstRelation getUpwardRelation(int childId) {
+	}
+
+	private MstRelation getUpwardRelation(int childId) {
+	}
+
+	private ListResultBean<MstRelation> getAllRelation(int parentId) {
+	}
+
+	private List<Element> createSortedList(Map<Integer, ElementDto> map, int type) {
+	}
+
+	private void removeRelations(int parentId, ListResultBean<MstRelation> rels) {
+	}
+}
+
+void foo(Map<String, Object> parameters) {
+}
+
+void MyParameterizedFunction(String p1, int p2, Boolean... params) {}
+
+void MyParameterizedFunction(String p1, int p2, Boolean ... params) {}
+
+void MyParameterizedFunction(String p1, int p2, Boolean ...params) {}
+
+List<Element> createSortedList() {}
+
+protected Collection<ScriptRequest> createSecureScriptRequests(Collection<ScriptRequest> scriptRequests) {}
+
+public UkrainianAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {}
+
+// vim: ft=java

@@ -1,0 +1,87 @@
+def myFunc():
+    """
+    Function: myFunc$PLACEHOLDER
+    
+    :return:  $PLACEHOLDER
+    """
+    pass
+
+def myFunc(p1: str = 'string', p2: int = 5):
+    """
+    Function: myFunc$PLACEHOLDER
+    
+    :param p1: $PLACEHOLDER
+    :param p2: $PLACEHOLDER
+    :return:  $PLACEHOLDER
+    """
+    pass
+
+def myFunc(p1: Callable[[int], None] = {}) -> None:
+    """
+    Function: myFunc$PLACEHOLDER
+    
+    :param p1: $PLACEHOLDER
+    :return: [None] $PLACEHOLDER
+    """
+    pass
+
+def myFunc(p1: Callable[[int], None] = False, p2: Callable[[int, Exception], None]) -> Sequence[T]:
+    """
+    Function: myFunc$PLACEHOLDER
+    
+    :param p1: $PLACEHOLDER
+    :param p2: $PLACEHOLDER
+    :return: [Sequence[T]] $PLACEHOLDER
+    """
+    pass
+
+def myFunc(p1: int = 5, p2: str = 'string', p3: bool = True, p4: Callable[[int, Exception], None]) -> float:
+    """
+    Function: myFunc$PLACEHOLDER
+    
+    :param p1: $PLACEHOLDER
+    :param p2: $PLACEHOLDER
+    :param p3: $PLACEHOLDER
+    :param p4: $PLACEHOLDER
+    :return: [float] $PLACEHOLDER
+    """
+    pass
+
+def myFunc(p1: Sequence[T]) -> Generator[int, float, str]:
+    """
+    Function: myFunc$PLACEHOLDER
+    
+    :param p1: $PLACEHOLDER
+    :return: [Generator[int, float, str]] $PLACEHOLDER
+    """
+    pass
+
+class MyClass(object):
+    def __init__(self: MyClass):
+        """
+        __init__:$PLACEHOLDER
+        :param self: $PLACEHOLDER
+        :return:  $PLACEHOLDER
+        """
+        pass
+
+    def myMethod(self: MyClass, p1: Sequence[T]) -> Generator[int, float, str]:
+        """
+        myMethod:$PLACEHOLDER
+        :param self: $PLACEHOLDER
+        :param p1:   $PLACEHOLDER
+        :return: [Generator[int, float, str]] $PLACEHOLDER
+        """
+        pass
+
+    def call(self, *args: str, **kwargs: str) -> str:
+        """
+        call:$PLACEHOLDER
+        :param self:     $PLACEHOLDER
+        :param *args:    $PLACEHOLDER
+        :param **kwargs: $PLACEHOLDER
+        :return: [str] $PLACEHOLDER
+        """
+        pass
+
+# vim: ft=python

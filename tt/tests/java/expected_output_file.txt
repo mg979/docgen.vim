@@ -1,0 +1,122 @@
+class Test {
+	/**
+	 * Function: setChildrenRecursively$PLACEHOLDER
+	 *
+	 * @param ElementDto childDto: $PLACEHOLDER
+	 * @param int childId:         $PLACEHOLDER
+	 **/
+	private void setChildrenRecursively(ElementDto childDto, int childId) {
+	}
+
+	/**
+	 * foo:$PLACEHOLDER
+	 **/
+	void foo();
+
+	@Override
+	/**
+	 * Function: getUpwardRelation$PLACEHOLDER
+	 *
+	 * @param int childId: $PLACEHOLDER
+	 * @return MstRelation: $PLACEHOLDER
+	 **/
+	private MstRelation getUpwardRelation(int childId) {
+	}
+
+	/**
+	 * getUpwardRelation:$PLACEHOLDER
+	 * @param int childId: $PLACEHOLDER
+	 * @return MstRelation: $PLACEHOLDER
+	 **/
+	private MstRelation getUpwardRelation(int childId) {
+	}
+
+	/**
+	 * Function: getAllRelation$PLACEHOLDER
+	 *
+	 * @param int parentId: $PLACEHOLDER
+	 * @return ListResultBean: $PLACEHOLDER
+	 **/
+	private ListResultBean<MstRelation> getAllRelation(int parentId) {
+	}
+
+	/**
+	 * createSortedList:$PLACEHOLDER
+	 * @param Map map:  $PLACEHOLDER
+	 * @param int type: $PLACEHOLDER
+	 * @return List: $PLACEHOLDER
+	 **/
+	private List<Element> createSortedList(Map<Integer, ElementDto> map, int type) {
+	}
+
+	/**
+	 * Function: removeRelations$PLACEHOLDER
+	 *
+	 * @param int parentId:        $PLACEHOLDER
+	 * @param ListResultBean rels: $PLACEHOLDER
+	 **/
+	private void removeRelations(int parentId, ListResultBean<MstRelation> rels) {
+	}
+}
+
+/**
+ * Function: foo$PLACEHOLDER
+ *
+ * @param Map parameters: $PLACEHOLDER
+ **/
+void foo(Map<String, Object> parameters) {
+}
+
+/**
+ * Function: MyParameterizedFunction$PLACEHOLDER
+ *
+ * @param String p1:         $PLACEHOLDER
+ * @param int p2:            $PLACEHOLDER
+ * @param Boolean... params: $PLACEHOLDER
+ **/
+void MyParameterizedFunction(String p1, int p2, Boolean... params) {}
+
+/**
+ * Function: MyParameterizedFunction$PLACEHOLDER
+ *
+ * @param String p1:          $PLACEHOLDER
+ * @param int p2:             $PLACEHOLDER
+ * @param Boolean ... params: $PLACEHOLDER
+ **/
+void MyParameterizedFunction(String p1, int p2, Boolean ... params) {}
+
+/**
+ * Function: MyParameterizedFunction$PLACEHOLDER
+ *
+ * @param String p1:         $PLACEHOLDER
+ * @param int p2:            $PLACEHOLDER
+ * @param Boolean ...params: $PLACEHOLDER
+ **/
+void MyParameterizedFunction(String p1, int p2, Boolean ...params) {}
+
+/**
+ * Function: createSortedList$PLACEHOLDER
+ *
+ * @return List: $PLACEHOLDER
+ **/
+List<Element> createSortedList() {}
+
+/**
+ * Function: createSecureScriptRequests$PLACEHOLDER
+ *
+ * @param Collection scriptRequests: $PLACEHOLDER
+ * @return Collection: $PLACEHOLDER
+ **/
+protected Collection<ScriptRequest> createSecureScriptRequests(Collection<ScriptRequest> scriptRequests) {}
+
+/**
+ * Function: UkrainianAnalyzerProvider$PLACEHOLDER
+ *
+ * @param IndexSettings indexSettings: $PLACEHOLDER
+ * @param Environment env:             $PLACEHOLDER
+ * @param String name:                 $PLACEHOLDER
+ * @param Settings settings:           $PLACEHOLDER
+ **/
+public UkrainianAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {}
+
+// vim: ft=java

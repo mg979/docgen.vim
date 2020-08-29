@@ -1,0 +1,22 @@
+function new_function(p1, p2, p3, p4)
+end
+
+local function new_function(p1, p2, p3)
+end
+
+function BotDetectionHandler:access(p1, p2, p3)
+end
+
+myprint = function(p1, p2)
+  print("This is my print function -   ##",param,"##")
+end
+
+local myprint = function(p1, p2, p3, p4, p5)
+  print("This is my print function -   ##",param,"##")
+end
+
+function a.b:c (p1, p2) body end
+
+a.b.c = function (self, p1, p2) body end
+
+-- vim: ft=lua

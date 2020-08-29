@@ -1,0 +1,71 @@
+/**
+ * Function: Run$PLACEHOLDER
+ *
+ * @param opts:     $PLACEHOLDER
+ * @param revision: $PLACEHOLDER
+ * @return:  $PLACEHOLDER
+ **/
+func Run(opts *Options, revision string) {}
+
+/**
+ * Function: NewHistory$PLACEHOLDER
+ *
+ * @param path:    $PLACEHOLDER
+ * @param maxSize: $PLACEHOLDER
+ * @return: [*History, error] $PLACEHOLDER
+ **/
+func NewHistory(path string, maxSize int) (*History, error) {}
+
+/**
+ * [History] Method: append$PLACEHOLDER
+ *
+ * @param line: $PLACEHOLDER
+ * @return: [error] $PLACEHOLDER
+ **/
+func (h *History) append(line string) error {}
+
+/**
+ * [History] Method: override$PLACEHOLDER
+ *
+ * @param str: $PLACEHOLDER
+ * @return:  $PLACEHOLDER
+ **/
+func (h *History) override(str string) {}
+
+/**
+ * [History] Method: current$PLACEHOLDER
+ *
+ * @return: [string] $PLACEHOLDER
+ **/
+func (h *History) current() string {}
+
+/**
+ * [Item] Method: Index$PLACEHOLDER
+ *
+ * @return: [int32] $PLACEHOLDER
+ **/
+func (item *Item) Index() int32 {}
+
+/**
+ * [Item] Method: TrimLength$PLACEHOLDER
+ *
+ * @return: [uint16] $PLACEHOLDER
+ **/
+func (item *Item) TrimLength() uint16 {}
+
+/**
+ * [Item] Method: Colors$PLACEHOLDER
+ *
+ * @return: [[]ansiOffset] $PLACEHOLDER
+ **/
+func (item *Item) Colors() []ansiOffset {}
+
+/**
+ * [Item] Method: AsString$PLACEHOLDER
+ *
+ * @param stripAnsi: $PLACEHOLDER
+ * @return: [string] $PLACEHOLDER
+ **/
+func (item *Item) AsString(stripAnsi bool) string {}
+
+// vim: ft=go

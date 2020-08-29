@@ -1,0 +1,33 @@
+def myFunc(p1, p_2 = some_default_value)
+end
+
+def myFunc (format = :html)
+end
+
+def parameters (p1,p2=4, p3*)
+end
+
+def my_func(options = nil)
+end
+
+module ClassMethods
+  def initialize(*)
+  end
+
+  private
+  def define_method_attribute=(name)
+  end
+
+  def copy!(other)
+  end
+
+  def where(attribute, type = nil, **options)
+  end
+
+  def [](attribute)
+  end
+
+  def each(&block)
+  end
+
+# vim: ft=ruby

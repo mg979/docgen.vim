@@ -1,0 +1,18 @@
+int myFunc(void) {}
+
+int TestClass::myFunc(const std::string& text /* inline comment */, const Node* node) {}
+
+void f(*(A*) p = this) {}
+
+int *f(int) {}
+
+template<class F, class... Args>
+decltype(auto) PerfectForward(F fun, Args&&... args) {}
+
+inline bool operator<(const value_t lhs, const value_t rhs) noexcept {}
+
+template <typename HandshakeHandler>
+void myFunc(handshake_type type, MOVE_ARG(HandshakeHandler) handler) {}
+
+virtual bool boolean(bool val) = 0;
+// vim: ft=cpp

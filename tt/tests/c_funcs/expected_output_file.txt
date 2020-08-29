@@ -1,0 +1,65 @@
+/**
+ * main() - $PLACEHOLDER
+ * @argc:   $PLACEHOLDER
+ * @argv[]: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns int: $PLACEHOLDER
+ **/
+int main(int argc, char *argv[]) {}
+
+/**
+ * func() - $PLACEHOLDER
+ * @x: $PLACEHOLDER
+ * @y: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns int: $PLACEHOLDER
+ **/
+int func(int x, int y) {}
+
+/**
+ * voidFunc:$PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ **/
+void voidFunc();
+
+/**
+ * intFunc() - $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns int: $PLACEHOLDER
+ **/
+int
+intFunc(void) {}
+
+/**
+ * string_equal() - $PLACEHOLDER
+ * @str1: $PLACEHOLDER
+ * @s2:   $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns bool: $PLACEHOLDER
+ **/
+bool string_equal(const char *str1, const char *s2);
+
+/**
+ * funcReturningFp() - $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns (*fp): $PLACEHOLDER
+ **/
+(*fp) funcReturningFp(void);
+
+/**
+ * funcReturningFp() - $PLACEHOLDER
+ * @p1: $PLACEHOLDER
+ * @p2: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns (*fp): $PLACEHOLDER
+ **/
+(*fp) funcReturningFp(*(*fp) p1, *(*fp) p2);
+
+// vim: ft=c

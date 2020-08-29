@@ -1,0 +1,19 @@
+func Run(opts *Options, revision string) {}
+
+func NewHistory(path string, maxSize int) (*History, error) {}
+
+func (h *History) append(line string) error {}
+
+func (h *History) override(str string) {}
+
+func (h *History) current() string {}
+
+func (item *Item) Index() int32 {}
+
+func (item *Item) TrimLength() uint16 {}
+
+func (item *Item) Colors() []ansiOffset {}
+
+func (item *Item) AsString(stripAnsi bool) string {}
+
+// vim: ft=go

@@ -1,0 +1,18 @@
+#------------------------------------------------------------------------------
+# Function: error$PLACEHOLDER
+#
+# @return: $PLACEHOLDER
+#------------------------------------------------------------------------------
+function error {
+  print "error"
+  return 1
+}
+
+##
+# Function: test$PLACEHOLDER
+##
+test() {
+  print "foobar"
+}
+
+# vim: ft=sh

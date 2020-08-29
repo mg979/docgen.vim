@@ -1,0 +1,37 @@
+void (*pf)(int);
+
+int *(*x[10])(void);
+
+struct {
+  int x;
+  int y;
+} test;
+
+struct _test_type {
+  int x;
+  int y;
+};
+
+struct _test_type {
+  int x, y;
+
+  int z;
+} Test1, Test2;
+
+typedef struct {
+  int x;
+  int y;
+} TEST;
+
+typedef struct _test {
+  int x;
+  int y;
+} TEST;
+
+struct tag { int i; double d; char *s } name;
+
+union tag { int i; double d; char *s } name;
+
+enum suit { CLUBS = 1, DIAMONDS = 2, HEARTS = 3, SPADES = 4 };
+
+// vim: ft=c et sw=2 ts=2 sts=2
