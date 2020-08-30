@@ -5,7 +5,7 @@
  *
  * $PLACEHOLDER
  * Returns int: $PLACEHOLDER
- **/
+ */
 int main(int argc, char *argv[]) {}
 
 /**
@@ -15,14 +15,14 @@ int main(int argc, char *argv[]) {}
  *
  * $PLACEHOLDER
  * Returns int: $PLACEHOLDER
- **/
+ */
 int func(int x, int y) {}
 
 /**
  * voidFunc:$PLACEHOLDER
  *
  * $PLACEHOLDER
- **/
+ */
 void voidFunc();
 
 /**
@@ -30,7 +30,7 @@ void voidFunc();
  *
  * $PLACEHOLDER
  * Returns int: $PLACEHOLDER
- **/
+ */
 int
 intFunc(void) {}
 
@@ -41,7 +41,7 @@ intFunc(void) {}
  *
  * $PLACEHOLDER
  * Returns bool: $PLACEHOLDER
- **/
+ */
 bool string_equal(const char *str1, const char *s2);
 
 /**
@@ -49,7 +49,7 @@ bool string_equal(const char *str1, const char *s2);
  *
  * $PLACEHOLDER
  * Returns (*fp): $PLACEHOLDER
- **/
+ */
 (*fp) funcReturningFp(void);
 
 /**
@@ -59,7 +59,7 @@ bool string_equal(const char *str1, const char *s2);
  *
  * $PLACEHOLDER
  * Returns (*fp): $PLACEHOLDER
- **/
+ */
 (*fp) funcReturningFp(*(*fp) p1, *(*fp) p2);
 
 // vim: ft=c

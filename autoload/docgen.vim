@@ -32,7 +32,7 @@ fun! docgen#box(bang, count) abort
   endif
 
   let doc.was_comment = doc.is_comment(line('.'))
-  let lines = doc.create_box(doc.replace_comment(), doc.comment()[3])
+  let lines = doc.create_box(doc.replace_comment())
   exe 'silent' (doc.was_comment ? '-1': '') . 'put =lines'
 
   call doc.reindent_box(lines)
@@ -97,7 +97,7 @@ fun! docgen#func(bang, count) abort
   let lines = doc.preserve_oldlines( lines, doc.previous_docstring(startLn, doc.below()) )
 
   " align placeholders and create box
-  let lines = doc.create_box( lines, doc.frameChar() )
+  let lines = doc.create_box(lines)
 
   exe 'silent ' ( doc.below() ? '' : '-1' ) . 'put =lines'
   call doc.reindent_box(lines)
@@ -495,7 +495,7 @@ fun! s:Doc.comment()
   " {{{1
   let cm = &commentstring =~ '//\s*%s' ? '/*%s*/' : &commentstring
   let c = substitute(split(&commentstring, '%s')[0], '\s*$', '', '')
-  return cm == '/*%s*/' ? ['/*', ' *', ' */', '*'] : [c, c, c, trim(c)[:0]]
+  return cm == '/*%s*/' ? ['/**', ' *', ' */', '*'] : [c, c, c, trim(c)[:0]]
 endfun "}}}
 
 
@@ -590,19 +590,20 @@ endfun "}}}
 " @param extraHeight: additional empty lines near the edges
 " @return: the box lines
 ""
-fun! s:Doc.create_box(lines, char) abort
+fun! s:Doc.create_box(lines) abort
   " {{{1
   let [a, m, b, _] = self.comment()
   let rwidth = &tw ? &tw : 79
-  if self.boxed() && a != b
-    let box1 = a . repeat(a:char, rwidth - strlen(a))
-    let box2 = ' ' . repeat(a:char, rwidth - strlen(a) - 1) . trim(b)
+  let char = self.frameChar()
+  if self.boxed() && a == '/**'
+    let box1 = a . repeat(char, rwidth - strlen(a))
+    let box2 = ' ' . repeat(char, rwidth - strlen(b)) . trim(b)
   elseif self.boxed()
-    let box1 = m . repeat(a:char, rwidth - strlen(a))
-    let box2 = box1
+    let box1 = a . repeat(char, rwidth - strlen(a))
+    let box2 = b . repeat(char, rwidth - strlen(b))
   else
-    let box1 = a . trim(m)
-    let box2 = m . trim(b)
+    let box1 = a
+    let box2 = b
   endif
   let extra = map(range(self.style.extraHeight), { k,v -> m })
   ""
@@ -638,14 +639,15 @@ fun! s:Doc.reindent_box(lines) abort
       let line = substitute(line, removeChars, '', '')
     endif
     if is_boxifying_comment && strwidth(line) < maxw
+      let cchar = self.comment()[1]
       let line .= repeat(' ', maxw - strwidth(line) - strwidth(char)) . char
       if self.style.centered && i == first
         let ind = matchstr(line, '^\s*')
-        let text = trim(matchstr(line, '^\V\s\*' . char . '\zs\.\*\ze' . char))
-        let spaces = maxw - strlen(ind) - strwidth(text) - strwidth(char) * 2
+        let text = trim(matchstr(line, '^\V\s\*' . cchar . '\zs\.\*\ze' . char))
+        let spaces = maxw - strlen(ind) - strwidth(text) - strwidth(char) - strwidth(cchar)
         let s = repeat(' ', spaces/2)
         let [s1, s2] = spaces % 2 ? [s, s . ' '] : [s, s]
-        let line = ind . char . s1 . text . s2 . char
+        let line = ind . cchar . s1 . text . s2 . char
       endif
     endif
     call setline(i, line)
@@ -781,7 +783,11 @@ endfun "}}}
 ""
 fun! s:Style.get_style() abort
   "{{{1
-  return self.get_list()[self.get_current()]
+  try
+    return self.get_list()[self.get_current()]
+  catch
+    return self.get_list()[0]
+  endtry
 endfun "}}}
 
 ""
@@ -1049,7 +1055,8 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:vim = {
-      \ 'parsers':   { -> ['^fu\k*!\?\s%s%s%s%s'] },
+      \ 'parsers': { -> ['^fu\k*!\?\s%s%s%s%s'] },
+      \ 'comment': { -> ['""', '"', '""', '='] }
       \}
 
 "{{{1
@@ -1067,7 +1074,7 @@ endfun "}}}
 let s:lua = {
       \ 'parsers': { -> ['^%sfunction\s%s%s%s', '^%s%s\s*=\s*function%s%s'] },
       \ 'typePat': { -> '\(local\)\?\s*' },
-      \ 'comment': { -> ['--', '--', '--', '-'] }
+      \ 'comment': { -> ['----', '--', '----', '-'] }
       \}
 
 "{{{1
@@ -1102,7 +1109,7 @@ fun! s:python.rtypeFmt() abort
 endfun
 
 fun! s:python.comment() abort
-  return self.style.is_docstring ? ['"""', '', '"""', '"'] : ['#', '#', '#', '#']
+  return self.style.is_docstring ? ['"""', '', '"""', '"'] : ['#', '#', '#', '-']
 endfun
 
 fun! s:python.is_comment(line) abort

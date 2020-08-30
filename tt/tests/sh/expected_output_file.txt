@@ -8,9 +8,9 @@ function error {
   return 1
 }
 
-##
+#
 # Function: test$PLACEHOLDER
-##
+#
 test() {
   print "foobar"
 }

@@ -3,7 +3,7 @@
  *
  * $PLACEHOLDER
  * Returns int: $PLACEHOLDER
- **/
+ */
 int myFunc(void) {}
 
 /**
@@ -13,7 +13,7 @@ int myFunc(void) {}
  *
  * $PLACEHOLDER
  * Returns int: $PLACEHOLDER
- **/
+ */
 int TestClass::myFunc(const std::string& text /* inline comment */, const Node* node) {}
 
 /**
@@ -21,7 +21,7 @@ int TestClass::myFunc(const std::string& text /* inline comment */, const Node* 
  * @p: $PLACEHOLDER
  *
  * $PLACEHOLDER
- **/
+ */
 void f(*(A*) p = this) {}
 
 /**
@@ -30,7 +30,7 @@ void f(*(A*) p = this) {}
  *
  * $PLACEHOLDER
  * Returns int: $PLACEHOLDER
- **/
+ */
 int *f(int) {}
 
 /**
@@ -41,7 +41,7 @@ int *f(int) {}
  * @args: $PLACEHOLDER
  *
  * $PLACEHOLDER
- **/
+ */
 template<class F, class... Args>
 decltype(auto) PerfectForward(F fun, Args&&... args) {}
 
@@ -52,7 +52,7 @@ decltype(auto) PerfectForward(F fun, Args&&... args) {}
  *
  * $PLACEHOLDER
  * Returns bool: $PLACEHOLDER
- **/
+ */
 inline bool operator<(const value_t lhs, const value_t rhs) noexcept {}
 
 /**
@@ -62,7 +62,7 @@ inline bool operator<(const value_t lhs, const value_t rhs) noexcept {}
  * @handler:          $PLACEHOLDER
  *
  * $PLACEHOLDER
- **/
+ */
 template <typename HandshakeHandler>
 void myFunc(handshake_type type, MOVE_ARG(HandshakeHandler) handler) {}
 
@@ -72,6 +72,6 @@ void myFunc(handshake_type type, MOVE_ARG(HandshakeHandler) handler) {}
  *
  * $PLACEHOLDER
  * Returns bool: $PLACEHOLDER
- **/
+ */
 virtual bool boolean(bool val) = 0;
 // vim: ft=cpp

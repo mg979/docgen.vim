@@ -4,13 +4,13 @@ class Test {
 	 *
 	 * @param ElementDto childDto: $PLACEHOLDER
 	 * @param int childId:         $PLACEHOLDER
-	 **/
+	 */
 	private void setChildrenRecursively(ElementDto childDto, int childId) {
 	}
 
 	/**
 	 * foo:$PLACEHOLDER
-	 **/
+	 */
 	void foo();
 
 	@Override
@@ -19,7 +19,7 @@ class Test {
 	 *
 	 * @param int childId: $PLACEHOLDER
 	 * @return MstRelation: $PLACEHOLDER
-	 **/
+	 */
 	private MstRelation getUpwardRelation(int childId) {
 	}
 
@@ -27,7 +27,7 @@ class Test {
 	 * getUpwardRelation:$PLACEHOLDER
 	 * @param int childId: $PLACEHOLDER
 	 * @return MstRelation: $PLACEHOLDER
-	 **/
+	 */
 	private MstRelation getUpwardRelation(int childId) {
 	}
 
@@ -36,7 +36,7 @@ class Test {
 	 *
 	 * @param int parentId: $PLACEHOLDER
 	 * @return ListResultBean: $PLACEHOLDER
-	 **/
+	 */
 	private ListResultBean<MstRelation> getAllRelation(int parentId) {
 	}
 
@@ -45,7 +45,7 @@ class Test {
 	 * @param Map map:  $PLACEHOLDER
 	 * @param int type: $PLACEHOLDER
 	 * @return List: $PLACEHOLDER
-	 **/
+	 */
 	private List<Element> createSortedList(Map<Integer, ElementDto> map, int type) {
 	}
 
@@ -54,7 +54,7 @@ class Test {
 	 *
 	 * @param int parentId:        $PLACEHOLDER
 	 * @param ListResultBean rels: $PLACEHOLDER
-	 **/
+	 */
 	private void removeRelations(int parentId, ListResultBean<MstRelation> rels) {
 	}
 }
@@ -63,7 +63,7 @@ class Test {
  * Function: foo$PLACEHOLDER
  *
  * @param Map parameters: $PLACEHOLDER
- **/
+ */
 void foo(Map<String, Object> parameters) {
 }
 
@@ -73,7 +73,7 @@ void foo(Map<String, Object> parameters) {
  * @param String p1:         $PLACEHOLDER
  * @param int p2:            $PLACEHOLDER
  * @param Boolean... params: $PLACEHOLDER
- **/
+ */
 void MyParameterizedFunction(String p1, int p2, Boolean... params) {}
 
 /**
@@ -82,7 +82,7 @@ void MyParameterizedFunction(String p1, int p2, Boolean... params) {}
  * @param String p1:          $PLACEHOLDER
  * @param int p2:             $PLACEHOLDER
  * @param Boolean ... params: $PLACEHOLDER
- **/
+ */
 void MyParameterizedFunction(String p1, int p2, Boolean ... params) {}
 
 /**
@@ -91,14 +91,14 @@ void MyParameterizedFunction(String p1, int p2, Boolean ... params) {}
  * @param String p1:         $PLACEHOLDER
  * @param int p2:            $PLACEHOLDER
  * @param Boolean ...params: $PLACEHOLDER
- **/
+ */
 void MyParameterizedFunction(String p1, int p2, Boolean ...params) {}
 
 /**
  * Function: createSortedList$PLACEHOLDER
  *
  * @return List: $PLACEHOLDER
- **/
+ */
 List<Element> createSortedList() {}
 
 /**
@@ -106,7 +106,7 @@ List<Element> createSortedList() {}
  *
  * @param Collection scriptRequests: $PLACEHOLDER
  * @return Collection: $PLACEHOLDER
- **/
+ */
 protected Collection<ScriptRequest> createSecureScriptRequests(Collection<ScriptRequest> scriptRequests) {}
 
 /**
@@ -116,7 +116,7 @@ protected Collection<ScriptRequest> createSecureScriptRequests(Collection<Script
  * @param Environment env:             $PLACEHOLDER
  * @param String name:                 $PLACEHOLDER
  * @param Settings settings:           $PLACEHOLDER
- **/
+ */
 public UkrainianAnalyzerProvider(IndexSettings indexSettings, Environment env, String name, Settings settings) {}
 
 // vim: ft=java
