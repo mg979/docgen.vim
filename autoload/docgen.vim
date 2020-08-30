@@ -639,9 +639,9 @@ fun! s:Doc.reindent_box(lines) abort
       let line = substitute(line, removeChars, '', '')
     endif
     if is_boxifying_comment && strwidth(line) < maxw
-      let cchar = self.comment()[1]
       let line .= repeat(' ', maxw - strwidth(line) - strwidth(char)) . char
       if self.style.centered && i == first
+        let cchar = trim(self.comment()[1])
         let ind = matchstr(line, '^\s*')
         let text = trim(matchstr(line, '^\V\s\*' . cchar . '\zs\.\*\ze' . char))
         let spaces = maxw - strlen(ind) - strwidth(text) - strwidth(char) - strwidth(cchar)
