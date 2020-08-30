@@ -173,7 +173,7 @@ let s:Doc.headerFmt   = { -> {
       \ 'boxed':    ['Function: %s' . s:ph, ''],
       \ 'default':  ['Function: %s' . s:ph, ''],
       \ 'simple':   ['%s:' . s:ph],
-      \ 'minimal':  ['%s:' . s:ph, ''],
+      \ 'minimal':  ['%s:' . s:ph],
       \} }
 
 fun! s:Doc.paramsFmt()
@@ -1078,15 +1078,6 @@ let s:lua = {
       \}
 
 "{{{1
-fun! s:lua.headerLines() abort
-  let style   = self.style.get_style()
-  let oneline = empty(self.lines.params) && empty(self.lines.return)
-  return
-        \ style == 'minimal' || style == 'simple' || oneline
-        \ ? [self.parsed.name . s:ph]
-        \ : map(self.templates.header, { k,v -> v =~ '%s' ? printf(v, self.parsed.name) : v })
-endfun
-
 fun! s:lua.retLines() abort
   return search('return\s*[[:alnum:]_([{''"]', 'nW', search('^end', 'nW'))
         \ ? self.templates.rtype : []

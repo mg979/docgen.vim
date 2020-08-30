@@ -61,7 +61,7 @@ end
 function a.b:c (p1, p2) body end
 
 ----
--- a.b.c$PLACEHOLDER
+-- a.b.c:$PLACEHOLDER
 -- @param self: $PLACEHOLDER
 -- @param p1:   $PLACEHOLDER
 -- @param p2:   $PLACEHOLDER
