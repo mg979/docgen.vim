@@ -21,4 +21,10 @@ string_func(
 	   )
 {}
 
+static unsigned int
+**int_func(double);
+
+static inline unsigned int **int_func_online(unsigned int x);
+
+void myFunc(handshake_type type, MOVE_ARG(HandshakeHandler) handler) {}
 // vim: ft=c

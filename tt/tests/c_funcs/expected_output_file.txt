@@ -79,4 +79,31 @@ string_func(
 	   )
 {}
 
+/**
+ * int_func() - $PLACEHOLDER
+ * @[double]: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns unsigned int**: $PLACEHOLDER
+ */
+static unsigned int
+**int_func(double);
+
+/**
+ * int_func_online() - $PLACEHOLDER
+ * @x: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns unsigned int **: $PLACEHOLDER
+ */
+static inline unsigned int **int_func_online(unsigned int x);
+
+/**
+ * myFunc() - $PLACEHOLDER
+ * @type:    $PLACEHOLDER
+ * @handler: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ */
+void myFunc(handshake_type type, MOVE_ARG(HandshakeHandler) handler) {}
 // vim: ft=c

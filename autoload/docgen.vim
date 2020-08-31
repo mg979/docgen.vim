@@ -267,7 +267,7 @@ fun! s:Doc.parse() abort
   let all  = matchlist(join(getline(self.startLn, self.endLn), "\n"), self.pattern)[1:]
   let ix = 0
   for group in self.order()
-    let self.parsed[group] = trim(all[ix])
+    let self.parsed[group] = substitute(trim(all[ix]), "\n", '', '')
     let ix += 1
   endfor
   return self.startLn
@@ -824,7 +824,7 @@ endfun "}}}
 let s:c = {
       \ 'parsers':   { -> ['^%s%s\n\?%s%s\s*\n\?[{;]'] },
       \ 'typePat':   { -> '\(\%(extern\|static\|inline\)\s*\)*' },
-      \ 'rtypePat':  { -> '\(\%(\S\+\s*\)\+\*\{-}\)\%(\s\+\|\n\)' },
+      \ 'rtypePat':  { -> s:c_rpat() },
       \ 'namePat':   { -> '\(\w\+\)' },
       \ 'paramsPat': { -> '\s*(\(\_.\{-}\))' },
       \ 'order':     { -> ['type', 'rtype', 'name', 'params'] },
@@ -903,6 +903,17 @@ fun! s:c.headerFmt()
 endfun
 
 ""
+" s:c_rpat: the pattern for the C/C++ return type
+""
+fun! s:c_rpat()
+  " either a single sequence of any characters, or more words like 'unsigned int'
+  let pat = '\%([[:punct:][:alnum:]]\+\|\%(\w\+\s*\)\+\)\+'
+  " either spaces or new line, possibly followed by asterisks
+  let pat .= '\%(\n\*\{-}\|\s\+\*\{-}\)'
+  return '\(' . pat . '\)'
+endfun
+
+""
 " s:c._params_names
 " This helper will also be used by cpp. If the parameter name is omitted, the
 " parameter type is used, but enclosed in square brackets.
@@ -942,7 +953,7 @@ fun! s:c.headerLines() abort
 endfun
 
 ""
-" Here we handle storage classes and even variables.
+" Here we handle structures and even variables.
 ""
 fun! s:c.storage() abort
   let storage = []
@@ -977,7 +988,7 @@ endfun "}}}
 let s:cpp = extend(copy(s:c), {
       \ 'parsers':    { -> ['^%s%s%s\n\?%s%s\s*\%(=\s*.*\|\w\+\s*\)\?\n\?[{;]'] },
       \ 'typePat':    { -> '\(\%(extern\|static\|inline\|explicit\|virtual\|volatile\|const\)\s*\)*' },
-      \ 'rtypePat':   { -> '\(\S\+\s*\*\{-}\)\%(\s\+\|\n\)\s*\%(\w\+::\)\?\*\{-}' },
+      \ 'rtypePat':   { -> s:c_rpat() . '\%(\w\+::\)\?\*\{-}' },
       \ 'tparamsPat': { -> '\%(\s*template\s*<\(.*\)>\n\)\?' },
       \ 'namePat':    { -> '\(\w\+\)<\?' },
       \ 'order':      { -> ['tparams', 'type', 'rtype', 'name', 'params'] },
@@ -1141,7 +1152,7 @@ endfun "}}}
 let s:java = {
       \ 'parsers':  { -> ['^\s*%s%s%s%s\s*[;{]'] },
       \ 'typePat':  { -> '\(\%(public\|private\|protected\|static\|final\)\s*\)*' },
-      \ 'rtypePat': { -> '\s*\(\S\+\)\?\s\+' },
+      \ 'rtypePat': { -> '\s*\([[:punct:][:alnum:]]\+\)\?\s\+' },
       \ 'order':    { -> ['type', 'rtype', 'name', 'params'] },
       \}
 
