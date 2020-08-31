@@ -90,11 +90,11 @@ fun! docgen#func(bang, count) abort
   " move to the line with the function declaration
   exe startLn
 
-  " get the formatted lines
-  let lines = doc.format()
+  " generate the formatted lines
+  call doc.format()
 
   " keep the old lines of the previous docstring, if unchanged
-  let lines = doc.preserve_oldlines( lines, doc.previous_docstring(startLn, doc.below()) )
+  let lines = doc.preserve_oldlines( doc.previous_docstring(startLn, doc.below()) )
 
   " align placeholders and create box
   let lines = doc.create_box(lines)
@@ -386,17 +386,16 @@ endfun
 
 fun! s:Doc.format() abort
   if self.is_storage
-    return self.storageLines()
+    let self.lines.header = self.storageLines()
+  elseif self.minimal()
+    call filter(self.lines.header, { k,v -> v != '' })
+  else
+    " process params and return first, if absent the docstring could be reduced
+    let self.lines.params = s:align(self.paramsLines())
+    let self.lines.detail = self.detailLines()
+    let self.lines.return = self.retLines()
+    let self.lines.header = self.headerLines()
   endif
-  " process params and return first, if absent the docstring will be reduced
-  let self.lines.params = self.paramsLines()
-  let self.lines.return = self.retLines()
-  let self.lines.detail = self.detailLines()
-  let self.lines.header = self.headerLines()
-  if self.minimal()
-    return filter(self.lines.header, { k,v -> v != '' })
-  endif
-  return self.lines.header + s:align(self.lines.params) + self.lines.detail + self.lines.return
 endfun
 
 ""
@@ -499,43 +498,7 @@ fun! s:Doc.comment()
 endfun "}}}
 
 
-""
-" Function: s:Doc.preserve_oldlines
-" Keep the valid lines of the previous docstring
-"
-" @param lines:    the new lines
-" @param oldlines: the old lines
-" @return: the merged lines
-""
-fun! s:Doc.preserve_oldlines(lines, oldlines) abort
-  " {{{1
-  " here we handle docstring generated lines, not extra edits
-  " we compare the generated lines with the old lines, and we keep the ones
-  " that look similar
-  for l in range(len(a:lines))
-    let line = substitute(a:lines[l], '\V' . s:ph, '', 'g')
-    for ol in a:oldlines
-      if line != '' && ol =~ '^\V' . trim(line)
-        let a:lines[l] = ol
-        break
-      endif
-    endfor
-  endfor
-  " here we handle extra edits, that is lines that have been inserted by the
-  " user and that are not part of the generated docstring
-  for o in range(len(a:oldlines))
-    let ol = a:oldlines[o]
-    " if the old line looks like @param, @rtype, etc, it's been generated and
-    " we've already handled it
-    if ol =~ s:docstring_words(['t\?param', 'return', 'rtype'])
-      continue
-    endif
-    if index(a:lines, ol) < 0
-      call insert(a:lines, ol, o)
-    endif
-  endfor
-  return a:lines
-endfun "}}}
+let s:Doc.preserve_oldlines = function('docgen#preserve#lines')
 
 
 ""
@@ -574,9 +537,23 @@ fun! s:Doc.previous_docstring(start, below) abort
       endif
     endwhile
   endif
-  let c = self.comment()[1]
-  call map(lines, 'substitute(v:val, "^\\V" . c . " ", "", "")')
-  return reverse(filter(lines, 'v:val =~ "\\k"'))
+  if !empty(lines)
+    let c = self.comment()
+    if trim(lines[0]) == c[0]
+      call remove(lines, 0)
+    endif
+    if trim(lines[-1]) == c[2]
+      call remove(lines, -1)
+    endif
+    for ix in range(len(lines))
+      if lines[ix] !~ '\k'
+        let lines[ix] = ''
+      else
+        let lines[ix] = substitute(lines[ix], '^\V' . c[1] . '\+ ', '', '')
+      endif
+    endfor
+  endif
+  return reverse(lines)
 endfun "}}}
 
 
@@ -1227,17 +1204,6 @@ endfun "}}}
 fun! s:FT()
   return get(s:, &filetype, {})
 endfun
-
-""
-" s:docstring_words: return a pattern that matches docstring-specific words
-""
-fun! s:docstring_words(words) abort
-  " {{{1
-  " the word preceded by an optional jollyChar and followed by a space
-  let wordPatterns = map(a:words, { k,v -> '.\?' . v . ' ' })
-  " join word patterns and make them optional
-  return '^\%(' . join(wordPatterns, '\|') . '\)\?\S\+:'
-endfun "}}}
 
 ""
 " s:align: align placeholders in the given line.
