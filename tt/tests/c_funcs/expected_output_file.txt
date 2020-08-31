@@ -79,4 +79,17 @@ string_func(
 	   )
 {}
 
+/**
+ * char_func() - $PLACEHOLDER
+ * @x: $PLACEHOLDER
+ * @y: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns unsigned char: $PLACEHOLDER
+ */
+unsigned char
+char_func(x, y)
+	int x,
+	double y
+{}
 // vim: ft=c

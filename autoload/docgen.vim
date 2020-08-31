@@ -822,11 +822,12 @@ endfun "}}}
 ""
 
 let s:c = {
-      \ 'parsers':   { -> ['^%s%s\n\?%s%s\s*\n\?[{;]'] },
+      \ 'parsers':   { -> ['^%s%s\n\?%s\s*(%s)\s*\n\?[{;]',
+      \                    '^%s%s\n\?%s\s*(.*)\n\s*%s\s*\n\?[{;]'] },
       \ 'typePat':   { -> '\(\%(extern\|static\|inline\)\s*\)*' },
       \ 'rtypePat':  { -> '\(\%(\S\+\s*\)\+\*\{-}\)\%(\s\+\|\n\)' },
       \ 'namePat':   { -> '\(\w\+\)' },
-      \ 'paramsPat': { -> '\s*(\(\_.\{-}\))' },
+      \ 'paramsPat': { -> '\(\_.\{-}\)' },
       \ 'order':     { -> ['type', 'rtype', 'name', 'params'] },
       \ 'docstyles': { -> ['kernel', 'kernelboxed', 'default', 'boxed', 'simple', 'minimal'] },
       \}
@@ -975,7 +976,7 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:cpp = extend(copy(s:c), {
-      \ 'parsers':    { -> ['^%s%s%s\n\?%s%s\s*\%(=\s*.*\|\w\+\s*\)\?\n\?[{;]'] },
+      \ 'parsers':    { -> ['^%s%s%s\n\?%s(%s)\s*\%(=\s*.*\|\w\+\s*\)\?\n\?[{;]'] },
       \ 'typePat':    { -> '\(\%(extern\|static\|inline\|explicit\|virtual\|volatile\|const\)\s*\)*' },
       \ 'rtypePat':   { -> '\(\S\+\s*\*\{-}\)\%(\s\+\|\n\)\s*\%(\w\+::\)\?\*\{-}' },
       \ 'tparamsPat': { -> '\%(\s*template\s*<\(.*\)>\n\)\?' },

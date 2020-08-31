@@ -21,4 +21,9 @@ string_func(
 	   )
 {}
 
+unsigned char
+char_func(x, y)
+	int x,
+	double y
+{}
 // vim: ft=c
