@@ -1,10 +1,10 @@
 int main(int argc, char *argv[]) {}
 
-int func(int x, int y) {}
+static inline int func(int x, int y) {}
 
-void voidFunc();
+static void voidFunc();
 
-int
+unsigned int
 intFunc(void) {}
 
 bool string_equal(const char *str1, const char *s2);
@@ -12,5 +12,13 @@ bool string_equal(const char *str1, const char *s2);
 (*fp) funcReturningFp(void);
 
 (*fp) funcReturningFp(*(*fp) p1, *(*fp) p2);
+
+char **
+string_func(
+		int x,
+		char *str,
+		double,
+	   )
+{}
 
 // vim: ft=c

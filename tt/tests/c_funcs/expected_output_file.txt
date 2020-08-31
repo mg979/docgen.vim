@@ -16,22 +16,22 @@ int main(int argc, char *argv[]) {}
  * $PLACEHOLDER
  * Returns int: $PLACEHOLDER
  */
-int func(int x, int y) {}
+static inline int func(int x, int y) {}
 
 /**
  * voidFunc:$PLACEHOLDER
  *
  * $PLACEHOLDER
  */
-void voidFunc();
+static void voidFunc();
 
 /**
  * intFunc() - $PLACEHOLDER
  *
  * $PLACEHOLDER
- * Returns int: $PLACEHOLDER
+ * Returns unsigned int: $PLACEHOLDER
  */
-int
+unsigned int
 intFunc(void) {}
 
 /**
@@ -61,5 +61,22 @@ bool string_equal(const char *str1, const char *s2);
  * Returns (*fp): $PLACEHOLDER
  */
 (*fp) funcReturningFp(*(*fp) p1, *(*fp) p2);
+
+/**
+ * string_func() - $PLACEHOLDER
+ * @x:        $PLACEHOLDER
+ * @str:      $PLACEHOLDER
+ * @[double]: $PLACEHOLDER
+ *
+ * $PLACEHOLDER
+ * Returns char **: $PLACEHOLDER
+ */
+char **
+string_func(
+		int x,
+		char *str,
+		double,
+	   )
+{}
 
 // vim: ft=c
