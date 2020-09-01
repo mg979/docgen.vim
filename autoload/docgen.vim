@@ -211,6 +211,8 @@ let s:Doc.minimal   = { -> 0 }
 let s:Doc.putBelow  = { -> 0 }
 let s:Doc.jollyChar = { -> '@' }
 
+let s:Doc.leadingSpaceAfterComment = { -> 0 }
+
 fun! s:Doc.frameChar()
   "{{{1
   return self.comment()[3]
@@ -576,6 +578,9 @@ fun! s:Doc.create_box(lines) abort
     let box1 = a . repeat(char, rwidth - strlen(a))
     let box2 = ' ' . repeat(char, rwidth - strlen(b)) . trim(b)
   elseif self.boxed()
+    if !self.style.is_docstring && self.leadingSpaceAfterComment()
+      let [a, b] = [a . ' ', b . ' ']
+    endif
     let box1 = a . repeat(char, rwidth - strlen(a))
     let box2 = b . repeat(char, rwidth - strlen(b))
   else
@@ -1078,6 +1083,7 @@ let s:python = {
       \ 'typePat':   { -> '\(class\|def\)\s*' },
       \ 'putBelow':  { -> 1 },
       \ 'jollyChar': { -> ':' },
+      \ 'leadingSpaceAfterComment': { -> 1 },
       \}
 
 "{{{1
