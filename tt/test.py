@@ -33,6 +33,7 @@ class bcolors:
 SUCCESS_STR = "{}SUCCESS{}".format(bcolors.OKGREEN, bcolors.ENDC)
 FAIL_STR = "{}FAIL{}".format(bcolors.FAIL, bcolors.ENDC)
 CLIENT = None
+ERRORS = {}
 
 
 # -------------------------------------------------------------
@@ -114,7 +115,7 @@ def keys_vim(key_str):
     time.sleep(KEY_PRESS_INTERVAL)
 
 
-def run_core(paths, nvim=False):
+def run_core(test, paths, nvim=False):
     """Start the test and return commands_cpu_time."""
     global CLIENT
     if nvim:
@@ -137,8 +138,12 @@ def run_core(paths, nvim=False):
         CLIENT.command("e %s" % paths["in_file"])
         keys = keys_nvim
         start_time = time.process_time()
-        commands = open(paths["command"]).read()
-        exec(commands)
+        commands = open(paths["command"]).readlines()
+        for line in commands:
+            if PAUSE_AT_ERRORS and CLIENT.eval('v:errmsg') != '':
+                ERRORS[test].append(CLIENT.eval('v:errmsg'))
+                CLIENT.command('let v:errmsg = ""')
+            exec(line)
         end_time = time.process_time()
         CLIENT.command(":w! %s" % paths["gen_out_file"])
         CLIENT.quit()
@@ -168,7 +173,7 @@ def run_one_test(test, f=None, nvim=False):
         os.remove(paths["gen_out_file"])
     # run test
     time.sleep(0.5)
-    commands_cpu_time = run_core(paths, nvim)
+    commands_cpu_time = run_core(test, paths, nvim)
     time.sleep(0.5)
     # check results
     time_str = "(took {:.3f} sec)".format(commands_cpu_time)
@@ -213,14 +218,16 @@ def main():
     )
     parser.add_argument("-l", "--list", action="store_true", help="list all tests")
     parser.add_argument("-d", "--diff", action="store_true", help="diff falied tests")
+    parser.add_argument("-e", "--error", action="store_true", help="pause at errors")
     args = parser.parse_args()
 
     # vim version and default vimrc
-    global VIM, DEFAULT_VIMRC, KEY_PRESS_INTERVAL, DIFF_FAILED
+    global VIM, DEFAULT_VIMRC, KEY_PRESS_INTERVAL, DIFF_FAILED, PAUSE_AT_ERRORS
     VIM = shutil.which("vim" if not args.nvim else "nvim")
     DEFAULT_VIMRC = Path("default/", "vimrc.vim").resolve(strict=True)
     KEY_PRESS_INTERVAL = args.time[0]
     DIFF_FAILED = args.diff
+    PAUSE_AT_ERRORS = args.error
 
     # execution
     failing_tests = []
@@ -232,6 +239,7 @@ def main():
         print_banner("Starting docgen.vim tests", f)
         tests = tests if args.test is None else [args.test]
         for t in tests:
+            ERRORS[t] = []
             if run_one_test(t, f, args.nvim) is not True:
                 failing_tests.append(t)
         if failing_tests == []:
@@ -240,6 +248,12 @@ def main():
             print_banner("summary: " + FAIL_STR, f)
             log("the following tests failed:", f)
             log("\n".join(failing_tests), f)
+            if PAUSE_AT_ERRORS:
+                for t in tests:
+                    if ERRORS[t]:
+                        print_banner(t)
+                        for e in ERRORS[t]:
+                            print(e)
             if DIFF_FAILED:
                 for t in failing_tests:
                     print_banner(t)
