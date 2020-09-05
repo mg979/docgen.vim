@@ -945,8 +945,6 @@ fun! s:c.storage() abort
   call add(storage, '^\s*\(\%(\w\+\s\+\)\+\)\s*{\%(.\{-}\)}\s*\(\w\+\%(,\s*\w\+\)\?\)\?;')
   " [typedef] struct|union|class|enum [tag] {...} name[, name...];  WITH \n
   call add(storage, '^\s*\(\%(\w\+\s\+\)\+\)\s*{\%(.*\n\?\)\{-}}\s*\(\w\+\%(,\s*\w\+\)\?\)\?;')
-  " enum name {...};
-  call add(storage, '^\s*\(\w\+\)\s\+\(\w\+\)\s*[{;]')
   " generic variable definition
   call add(storage, '^\s*\(\w\+\)\s\+\([^=]\+\);')
   return storage
@@ -1043,7 +1041,22 @@ endfun
 
 fun! s:cpp.retLines() abort
   return !empty(self.parsed.tparams) ? [] : self.templates.rtype
-endfun "}}}
+endfun
+
+fun! s:cpp.storage() abort
+  let storage = []
+  " typedef ... name;
+  call add(storage, '^\s*\(typedef\)\s\+\%(\w\+\s\+\)\+\(\w\+\);')
+  " [typedef] struct|union|class|enum [tag] [: type] {...} name[, name...];  WITH NO \n
+  call add(storage, '^\s*\(\%(\w\+\s\+\)\+\)\s*\%(:\%(\s\+\w\+\)\+\s*\)\?{\%(.\{-}\)}\s*\(\w\+\%(,\s*\w\+\)\?\)\?;')
+  " [typedef] struct|union|class|enum [tag] [: type] {...} name[, name...];  WITH \n
+  call add(storage, '^\s*\(\%(\w\+\s\+\)\+\)\s*\%(:\%(\s\+\w\+\)\+\s*\)\?{\%(.*\n\?\)\{-}}\s*\(\w\+\%(,\s*\w\+\)\?\)\?;')
+  " generic variable definition
+  call add(storage, '^\s*\(\w\+\)\s\+\([^=]\+\);')
+  return storage
+endfun
+
+"}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
