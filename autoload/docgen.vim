@@ -972,7 +972,7 @@ let s:cpp = extend(copy(s:c), {
       \ 'typePat':    { -> '\(\%(extern\|static\|inline\|explicit\|virtual\|volatile\|const\)\s*\)*' },
       \ 'rtypePat':   { -> s:c_rpat() . '\%(\w\+::\)\?\*\{-}' },
       \ 'tparamsPat': { -> '\%(\s*template\s*<\(.*\)>\n\)\?' },
-      \ 'namePat':    { -> '\(\w\+\)<\?' },
+      \ 'namePat':    { -> '\(\w\+[[:punct:]]\{-}\)' },
       \ 'order':      { -> ['tparams', 'type', 'rtype', 'name', 'params'] },
       \ 'sections':   { -> ['header', 'tparams', 'params', 'rtype'] },
       \})

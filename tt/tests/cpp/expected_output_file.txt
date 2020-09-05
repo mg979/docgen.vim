@@ -46,7 +46,7 @@ template<class F, class... Args>
 decltype(auto) PerfectForward(F fun, Args&&... args) {}
 
 /**
- * operator() - $PLACEHOLDER
+ * operator<() - $PLACEHOLDER
  * @lhs: $PLACEHOLDER
  * @rhs: $PLACEHOLDER
  *
