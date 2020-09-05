@@ -67,4 +67,9 @@ union tag { int i; double d; char *s } name;
  */
 enum suit { CLUBS = 1, DIAMONDS = 2, HEARTS = 3, SPADES = 4 };
 
+/**
+ * int x: $PLACEHOLDER
+ */
+int x = 1;
+
 // vim: ft=c et sw=2 ts=2 sts=2

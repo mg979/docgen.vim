@@ -946,7 +946,7 @@ fun! s:c.storage() abort
   " [typedef] struct|union|class|enum [tag] {...} name[, name...];  WITH \n
   call add(storage, '^\s*\(\%(\w\+\s\+\)\+\)\s*{\%(.*\n\?\)\{-}}\s*\(\w\+\%(,\s*\w\+\)\?\)\?;')
   " generic variable definition
-  call add(storage, '^\s*\(\w\+\)\s\+\([^=]\+\);')
+  call add(storage, '^\s*\(\w\+\)\s\+\([^=]\+\)\%(=\s*.*\)\?;')
   return storage
 endfun
 
@@ -1052,7 +1052,7 @@ fun! s:cpp.storage() abort
   " [typedef] struct|union|class|enum [tag] [: type] {...} name[, name...];  WITH \n
   call add(storage, '^\s*\(\%(\w\+\s\+\)\+\)\s*\%(:\%(\s\+\w\+\)\+\s*\)\?{\%(.*\n\?\)\{-}}\s*\(\w\+\%(,\s*\w\+\)\?\)\?;')
   " generic variable definition
-  call add(storage, '^\s*\(\w\+\)\s\+\([^=]\+\);')
+  call add(storage, '^\s*\(\w\+\)\s\+\([^=]\+\)\%(=\s*.*\)\?;')
   return storage
 endfun
 
