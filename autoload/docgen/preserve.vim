@@ -95,7 +95,9 @@ endfunction
 function! s:fill_header(new, old) abort
   for ix in range(len(a:old))[1:]
     let ol = a:old[ix]
-    if ol != a:new[ix]
+    if ix >= len(a:new)
+      call add(a:new, ol)
+    elseif ol != a:new[ix]
       call insert(a:new, ol, ix)
     endif
   endfor
