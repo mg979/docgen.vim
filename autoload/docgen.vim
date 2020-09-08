@@ -390,7 +390,10 @@ fun! s:Doc.format() abort
   if self.is_storage
     let self.lines.header = self.storageLines()
   elseif self.minimal()
-    call filter(self.lines.header, { k,v -> v != '' })
+    let self.lines.params = []
+    let self.lines.detail = []
+    let self.lines.return = []
+    let self.lines.header = filter(self.headerLines(), { k,v -> v != '' })
   else
     " process params and return first, if absent the docstring could be reduced
     let self.lines.params = s:align(self.paramsLines())
