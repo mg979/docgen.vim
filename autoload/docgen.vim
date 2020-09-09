@@ -574,7 +574,7 @@ endfun "}}}
 ""
 fun! s:Doc.create_box(lines) abort
   " {{{1
-  let [a, m, b, _] = self.comment()
+  let [a, m, b, _] = self.comment()[:3]
   let rwidth = &tw ? &tw : 79
   let char = self.frameChar()
   if self.boxed() && a == '/**'
@@ -591,6 +591,7 @@ fun! s:Doc.create_box(lines) abort
     let box2 = b
   endif
   let extra = map(range(self.style.extraHeight), { k,v -> m })
+  let post = self.style.is_docstring ? self.comment()[4:] : []
   ""
   " Reformat the lines as comment. Top and bottom lines are not handled here.
   "   - empty line ? comment char(s)
@@ -598,7 +599,7 @@ fun! s:Doc.create_box(lines) abort
   "   - both? concatenate comment chars and line, with a space in between
   ""
   call map(a:lines, 'v:val == "" ? m : m == "" ? v:val : (m . " " . v:val)')
-  return [box1] + extra + a:lines + extra + [box2]
+  return [box1] + extra + a:lines + extra + [box2] + post
 endfun "}}}
 
 
