@@ -911,7 +911,7 @@ fun! s:c._params_names(...) abort
   for p in split(params, ',')
     let _p = split(p)
     if len(_p) > 1
-      call add(names, substitute(_p[-1], '^[*&]', '', ''))
+      call add(names, substitute(_p[-1], '^[*&]\+', '', ''))
     else
       call add(names, '[' . _p[0] . ']')
     endif
