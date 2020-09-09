@@ -772,7 +772,8 @@ fun! s:Style.get_style() abort
   try
     return self.get_list()[self.get_current()]
   catch
-    return self.get_list()[0]
+    let list = self.get_list()
+    return empty(list) ? 'minimal' : list[0]
   endtry
 endfun "}}}
 
