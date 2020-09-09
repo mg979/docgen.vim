@@ -168,24 +168,6 @@ endfun "}}}
 " Docstring formatter patterns
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-" default formatters for docstring lines
-let s:Doc.headerFmt   = { -> {
-      \ 'boxed':    ['Function: %s' . s:ph, ''],
-      \ 'default':  ['Function: %s' . s:ph, ''],
-      \ 'simple':   ['%s:' . s:ph],
-      \ 'minimal':  ['%s:' . s:ph],
-      \} }
-
-fun! s:Doc.paramsFmt()
-  " {{{1
-  return [self.jollyChar() . 'param %s: ' . s:ph]
-endfun "}}}
-
-fun! s:Doc.rtypeFmt()
-  " {{{1
-  return [self.jollyChar() . 'return: ' . s:ph]
-endfun "}}}
-
 " default patterns for function name, parameters, pre and post
 let s:Doc.typePat   = { -> '\(\)' }
 let s:Doc.namePat   = { -> '\s*\([^( \t]\+\)' }
@@ -206,8 +188,6 @@ let s:Doc.storageLines = { -> [] }
 " Docstring formatter styles
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-let s:Doc.boxed     = { -> 0 }
-let s:Doc.minimal   = { -> 0 }
 let s:Doc.putBelow  = { -> 0 }
 let s:Doc.jollyChar = { -> '@' }
 
@@ -218,16 +198,45 @@ fun! s:Doc.frameChar()
   return self.comment()[3]
 endfun "}}}
 
+""
+" These functions fetch the format for the active style in doc.style.fmt[type]
+" A default (minimal) formatter is returned if this fails for some reason.
+""
+
+fun! s:Doc.headerFmt()
+  " {{{1
+  return self.style.get_fmt('header')
+endfun "}}}
+
+fun! s:Doc.paramsFmt()
+  " {{{1
+  return self.style.get_fmt('params')
+endfun "}}}
+
+fun! s:Doc.rtypeFmt()
+  " {{{1
+  return self.style.get_fmt('rtype')
+endfun "}}}
+
+""
+" Docstring is of box type.
+""
 fun! s:Doc.boxed()
   " {{{1
   return self.style.get_style() =~ 'box'
 endfun "}}}
 
+""
+" Minimal docstring.
+""
 fun! s:Doc.minimal()
   " {{{1
   return self.style.get_style() == 'minimal'
 endfun "}}}
 
+""
+" Docstring will be put below the declaration.
+""
 fun! s:Doc.below()
   " {{{1
   return get(s:FT(), '_putBelow', self.putBelow())
@@ -697,8 +706,40 @@ endfun "}}}
 ""
 
 let s:Style = {
-      \  'docstyles': { -> ['default', 'boxed', 'simple', 'minimal'] },
-      \  'boxstyles': { -> ['simple', 'box', 'large_simple', 'large_box', 'fullbox', 'fullbox_centered'] },
+      \ 'fmt': {},
+      \ 'docstyles': { -> ['default', 'boxed', 'simple', 'minimal'] },
+      \ 'boxstyles': { -> ['simple', 'box', 'large_simple', 'large_box', 'fullbox', 'fullbox_centered'] },
+      \}
+
+""
+" backup minimal formatters if something goes really out of its way
+""
+let s:Style._fmt = {
+      \ 'header':  ['%s:' . s:ph],
+      \ 'params':  ['param %s: ' . s:ph],
+      \ 'tparams': ['tparam %s: ' . s:ph],
+      \ 'rtype':   ['return: ' . s:ph],
+      \}
+
+let s:Style.fmt.header = {
+      \ 'boxed':    ['Function: %s' . s:ph, ''],
+      \ 'default':  ['Function: %s' . s:ph, ''],
+      \ 'simple':   ['%s:' . s:ph],
+      \ 'minimal':  ['%s:' . s:ph],
+      \}
+
+let s:Style.fmt.params = {
+      \ 'boxed':    ['param %s: ' . s:ph],
+      \ 'default':  ['param %s: ' . s:ph],
+      \ 'simple':   ['param %s: ' . s:ph],
+      \ 'minimal':  ['param %s: ' . s:ph],
+      \}
+
+let s:Style.fmt.rtype = {
+      \ 'boxed':    ['return: ' . s:ph],
+      \ 'default':  ['return: ' . s:ph],
+      \ 'simple':   ['return: ' . s:ph],
+      \ 'minimal':  ['return: ' . s:ph],
       \}
 
 ""
@@ -795,6 +836,44 @@ fun! s:Style.get_list() abort
         \self.is_boxed     ? filter(copy(get(s:FT(), 'boxstyles', self.boxstyles)()), { k,v -> v =~ 'box' })
         \                  : filter(copy(get(s:FT(), 'boxstyles', self.boxstyles)()), { k,v -> v !~ 'box' })
 endfun "}}}
+
+""
+" Function: s:Style.get_fmt
+" This function tries to fetch a valid formatter for the current style, for the
+" given section. This format will be used to generate templates. When the
+" filetype defines its own formatter, it is returned as-is, otherwise the
+" control character is added to the template (but not for the header).
+"
+" If the lookup fails, a backup (minimal) formatter is returned.
+" This could happen, for example, if a filetype defines a style, but not the
+" template for all sections.
+"
+" @param section: header, params or rtype
+" @return: the unformatted template for the section
+""
+fun! s:Style.get_fmt(section) abort
+  let style = self.get_style()
+  try
+    " eg: s:vim.fmt.header.boxed
+    return copy(s:FT().fmt[a:section][style])
+  catch
+    try
+      " eg: self.fmt.header.boxed
+      if a:section == 'header'
+        return copy(self.fmt[a:section][style])
+      else
+        return map(copy(self.fmt[a:section][style]), 'v:val != "" ? self.doc.jollyChar() . v:val : ""')
+      endif
+    catch
+      " eg: self._fmt.header
+      if a:section == 'header'
+        return copy(self._fmt[a:section])
+      else
+        return map(copy(self._fmt[a:section]), 'v:val != "" ? self.doc.jollyChar() . v:val : ""')
+      endif
+    endtry
+  endtry
+endfun
 
 
 
