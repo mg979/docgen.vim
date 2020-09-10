@@ -29,7 +29,7 @@ function! docgen#preserve#lines(oldlines) abort dict
   " the pattern that starts the 'detail' section
   let dpat = get(self, 'detailPat', '\s*\u')
   " the pattern that starts the 'return' section
-  let rpat = '^\c\V' . c . 'return\|rtype'
+  let rpat = '^\c\V' . c . '\?return\|rtype'
   " any other pattern with control char starts the 'params' section
   let ppat = '^\c\V' . c
 
@@ -93,7 +93,7 @@ endfunction
 " @param old: the old lines
 ""
 function! s:fill_header(new, old) abort
-  for ix in range(len(a:old))[1:]
+  for ix in range(len(a:old))
     let ol = a:old[ix]
     if ix >= len(a:new)
       call add(a:new, ol)

@@ -553,17 +553,18 @@ fun! s:Doc.previous_docstring(start, below) abort
   endif
   if !empty(lines)
     let c = self.comment()
-    if trim(lines[0]) == c[0]
+    while trim(lines[0]) !~ '\k'
       call remove(lines, 0)
-    endif
-    if trim(lines[-1]) == c[2]
+    endwhile
+    while trim(lines[-1]) !~ '\k'
       call remove(lines, -1)
-    endif
+    endwhile
     for ix in range(len(lines))
       if lines[ix] !~ '\k'
         let lines[ix] = ''
       else
-        let lines[ix] = substitute(lines[ix], '^\V' . c[1] . '\+ ', '', '')
+        let lines[ix] = substitute(lines[ix], '^\V\s\*' . c[1] . '\+\s\?', '', '')
+        let lines[ix] = substitute(lines[ix], '\V\s\+' . c[1] . '\_$', '', '')
       endif
     endfor
   endif
