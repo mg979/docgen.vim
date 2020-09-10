@@ -1146,7 +1146,8 @@ endfun
 
 let s:vim = {
       \ 'parsers': { -> ['^fu\k*!\?\s%s%s%s%s'] },
-      \ 'comment': { -> ['""', '"', '""', '='] }
+      \ 'comment': { -> ['""', '"', '""', '='] },
+      \ 'fmt': {'rtype': {'default': ['Returns: ' . s:ph], 'boxed': ['Returns: ' . s:ph]}}
       \}
 
 "{{{1
