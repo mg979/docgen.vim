@@ -624,18 +624,18 @@ fun! s:Doc.reindent_box(lines) abort
   let ind = matchstr(getline('.'), '^\s*')
   let lines = map(a:lines, "substitute(v:val, '^\s*', ind, '')")
   let [first, i, char] = [line('.') + 1, line('.'), self.frameChar()]
-  let maxw = &tw ? &tw : 79
+  let maxw = (&tw ? &tw : 79) - strdisplaywidth(ind) + strlen(ind)
   " executing DocBox on a previous comment and wanting a full box
   let is_boxifying_comment = !self.style.is_docstring &&
         \                     self.was_comment && self.style.fullbox
 
   for line in lines
-    if strwidth(line) > maxw
+    if strlen(line) > maxw
       let removeChars = printf('\V%s\{%s}', char, strlen(line) - maxw)
       let line = substitute(line, removeChars, '', '')
     endif
-    if is_boxifying_comment && strwidth(line) < maxw
-      let line .= repeat(' ', maxw - strwidth(line) - strwidth(char)) . char
+    if is_boxifying_comment && strlen(line) < maxw
+      let line .= repeat(' ', maxw - strlen(line) - strwidth(char)) . char
       if self.style.centered && i == first
         let cchar = trim(self.comment()[1])
         let ind = matchstr(line, '^\s*')
