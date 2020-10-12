@@ -33,7 +33,7 @@ fun! docgen#box(bang, count) abort
 
   let doc.was_comment = doc.is_comment(line('.'))
   let lines = doc.create_box(doc.replace_comment())
-  exe 'silent' (doc.was_comment ? '-1': '') . 'put =lines'
+  exe 'silent' (doc.was_comment || line('.') == 1 ? '-1': '') . 'put =lines'
 
   call doc.reindent_box(lines)
   normal! `[
