@@ -635,12 +635,12 @@ fun! s:Doc.reindent_box(lines) abort
       let line = substitute(line, removeChars, '', '')
     endif
     if is_boxifying_comment && strlen(line) < maxw
-      let line .= repeat(' ', maxw - strlen(line) - strwidth(char)) . char
+      let line .= repeat(' ', maxw - strdisplaywidth(line) - strwidth(char)) . char
       if self.style.centered && i == first
         let cchar = trim(self.comment()[1])
         let ind = matchstr(line, '^\s*')
         let text = trim(matchstr(line, '^\V\s\*' . cchar . '\zs\.\*\ze' . char))
-        let spaces = maxw - strlen(ind) - strwidth(text) - strwidth(char) - strwidth(cchar)
+        let spaces = maxw - strlen(ind) - strdisplaywidth(text) - strwidth(char) - strwidth(cchar)
         let s = repeat(' ', spaces/2)
         let [s1, s2] = spaces % 2 ? [s, s . ' '] : [s, s]
         let line = ind . cchar . s1 . text . s2 . char
@@ -683,7 +683,7 @@ fun! s:Doc.replace_comment() abort
     endwhile
     let lines = getline(startLn, endLn)
     " strip the previous comment chars
-    call map(lines, { k,v -> substitute(v, '^\s*[[:punct:]]\+\s*', '', '') })
+    call map(lines, { k,v -> substitute(v, '^\s*[[:punct:]]\+\%(\s*\_$\|\s\)', '', '') })
     if empty(lines[0])
       call remove(lines, 0)
     endif
