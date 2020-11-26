@@ -660,7 +660,7 @@ endfun "}}}
 ""
 fun! s:Doc.is_comment(line) abort
   "{{{1
-  return synIDattr(synID(a:line, indent(a:line) + 1, 1), "name") =~? 'comment'
+  return synIDattr(synID(a:line, match(a:line, '\S') + 1, 1), "name") =~? 'comment'
 endfun "}}}
 
 
