@@ -20,7 +20,8 @@ Pros:
 
 ## Supported filetypes (as of now):
 
-* c/cpp
+* c
+* cpp
 * java
 * go
 * lua
@@ -60,6 +61,8 @@ nnoremap <Space><Tab> cgn
 The flexibility comes from the usage of `bang` and `count` in both mappings and
 commands.
 
+#### docstring
+
 There are 4 different styles for docstrings (using mappings from example):
 
 |style|mapping|effect|
@@ -69,18 +72,17 @@ There are 4 different styles for docstrings (using mappings from example):
 |'simple'          |<kbd>3,d</kbd>|similar but simpler|
 |'minimal'         |<kbd>4,d</kbd>|just the function name, no parameters|
 
-For c/cpp there are 2 additional styles (`kernel`, `kernelboxed`) that are
-actually the default (the other styles are still accessible increasing the
-`count`). In c/cpp there is also support for structs, unions, etc.
+For c/cpp there are additional styles (`kernel`, `kernelboxed`,
+`minimalboxed`). In c/cpp there is also support for structs, unions, etc.
 
 Also remember that using a `count` *sets* a style, and it is remembered if you
 then use the mapping *without* count.
 
-Using the `bang` or uppercase mapping has a different effect: it doesn't create
-the docstring, but sets the style to the chosen one (== `count`). With no
-`count` it toggles between `above`/`below`, that is the position where the
-docstring will be added (eg `python` defaults to `below`, but you can have the
-same with any supported filetype).
+Using the `bang` or uppercase mapping will show a list of available styles, and
+also allow you to change where the docstring will be inserted (above or below
+the function).
+
+#### comment boxes
 
 There are 6 different styles for boxes (using mappings from example):
 
@@ -95,19 +97,6 @@ There are 6 different styles for boxes (using mappings from example):
 
 `fullbox` means that the edge on the right is also closed. It only works when
 boxifying a previous comment, or converting a simpler box.
-
-## Documentation
-
-For now it's all here. Experiment with the mappings (especially with `count`)
-and find the style you like best.
-
-## Customization
-
-Yes it's possible, but maybe later. Ask if you need something.
-
-## Contributing
-
-Want to add support for more filetypes? Read the code and send a PR.
 
 ## Credits
 
