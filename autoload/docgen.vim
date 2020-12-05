@@ -63,7 +63,7 @@ fun! docgen#func(bang, count) abort
     if a:count
       call doc.style.change(a:count - 1)
     else
-      call doc.style.change_below()
+      call doc.style.choose()
     endif
     call doc.style.echo()
     return
@@ -762,6 +762,30 @@ fun! s:Style.change(...) abort
     let ft[v] += 1
   endif
 endfun "}}}
+
+""
+" s:Style.choose
+""
+fun! s:Style.choose() abort
+  echohl Title
+  echo 'Choose a docstring style:'
+  echohl Comment
+  echo '-------------------------'
+  echohl None
+  let pos = printf("Change position (current: %s)",
+        \          self.doc.below() ? 'below' : 'above')
+  let list = map(self.get_list() + [pos], { k,v -> (k+1) . '. ' . v })
+  let npos = len(self.get_list()) + 1
+  let choice = inputlist(list)
+  if choice
+    if choice == npos
+      call self.change_below()
+    else
+      call self.change(choice - 1)
+    endif
+  endif
+  redraw
+endfun
 
 ""
 " s:Style.change_below
