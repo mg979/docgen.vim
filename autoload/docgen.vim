@@ -853,6 +853,7 @@ endfun "}}}
 " @return: the unformatted template for the section
 ""
 fun! s:Style.get_fmt(section) abort
+  "{{{1
   let style = self.get_style()
   try
     " eg: s:vim.fmt.header.boxed
@@ -874,7 +875,7 @@ fun! s:Style.get_fmt(section) abort
       endif
     endtry
   endtry
-endfun
+endfun "}}}
 
 
 
@@ -895,7 +896,7 @@ let s:c = {
       \ 'namePat':   { -> '\(\w\+\)' },
       \ 'paramsPat': { -> '\s*(\(\_.\{-}\))' },
       \ 'order':     { -> ['type', 'rtype', 'name', 'params'] },
-      \ 'docstyles': { -> ['kernel', 'kernelboxed', 'default', 'boxed', 'simple', 'minimal'] },
+      \ 'docstyles': { -> ['kernel', 'kernelboxed', 'default', 'boxed', 'simple', 'minimal', 'minimalboxed'] },
       \}
 
 "{{{1
@@ -942,6 +943,7 @@ fun! s:c.rtypeFmt() abort
         \ 'default':     [ch . 'return ' . rtype . ': ' . s:ph],
         \ 'simple':      [ch . 'return: ' . s:ph],
         \ 'minimal':     [],
+        \ 'minimalboxed': [],
         \}
 endfun
 
@@ -953,7 +955,8 @@ fun! s:c.paramsFmt() abort
         \ 'boxed':       [ch . 'param %s: ' . s:ph],
         \ 'default':     [ch . 'param %s: ' . s:ph],
         \ 'simple':      ['%s', s:ph],
-        \ 'minimal':     ['%s:' . s:ph],
+        \ 'minimal':     [],
+        \ 'minimalboxed': [],
         \}
 endfun
 
@@ -966,6 +969,7 @@ fun! s:c.headerFmt()
         \ 'default':     [ch . 'brief %s: ' . s:ph],
         \ 'simple':      ['%s', s:ph],
         \ 'minimal':     ['%s:' . s:ph],
+        \ 'minimalboxed': ['%s:' . s:ph],
         \}
 endfun
 
@@ -1079,6 +1083,7 @@ fun! s:cpp.tparamsFmt() abort
         \ 'default':     [ch . 'tparam %s: ' . s:ph],
         \ 'simple':      ['%s: ' . s:ph],
         \ 'minimal':     [],
+        \ 'minimalboxed': [],
         \}
 endfun
 
@@ -1093,6 +1098,7 @@ fun! s:cpp.headerFmt()
         \ 'default':     [self.jollyChar() . 'brief %s: ' . s:ph, ''],
         \ 'simple':      [s . '%s:' . s:ph],
         \ 'minimal':     [s . '%s:' . s:ph, ''],
+        \ 'minimalboxed': [s . '%s:' . s:ph, ''],
         \}
 endfun
 
