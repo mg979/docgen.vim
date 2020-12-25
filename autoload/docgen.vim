@@ -506,9 +506,10 @@ endfun "}}}
 ""
 fun! s:Doc.comment()
   " {{{1
-  let cm = &commentstring =~ '//\s*%s' ? '/*%s*/' : &commentstring
-  let c = substitute(split(&commentstring, '%s')[0], '\s*$', '', '')
-  return cm == '/*%s*/' ? ['/**', ' *', ' */', '*'] : [c, c, c, trim(c)[:0]]
+  let cs = empty(&commentstring) ? '/*%s*/' : &commentstring
+  let cm = cs =~ '//\s*%s' ? '/*%s*/' : cs
+  let c = substitute(split(cs, '%s')[0], '\s*$', '', '')
+  return cm == '/*%s*/' ? ['/**', ' *', ' */', '*'] : [c, c, c, '-']
 endfun "}}}
 
 
