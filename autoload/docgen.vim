@@ -2,8 +2,6 @@
 
 let s:supported = ['vim', 'lua', 'python', 'sh', 'java', 'ruby', 'go', 'c', 'cpp']
 
-let s:ph = '$' . 'PLACEHOLDER'
-
 " }}}
 
 
@@ -103,9 +101,10 @@ fun! docgen#func(bang, count) abort
   call doc.reindent_box(lines)
 
   " edit first placeholder, or go back to starting line if none is found
+  let ph = doc.placeholder()
   normal! {
-  if search(s:ph, '', startLn + len(lines))
-    let @/ = s:ph
+  if search(ph, '', startLn + len(lines))
+    let @/ = ph
     let @= = '''"_cgn'''
   else
     let @= = '""'
@@ -190,6 +189,7 @@ let s:Doc.storageLines = { -> [] }
 
 let s:Doc.putBelow  = { -> 0 }
 let s:Doc.jollyChar = { -> '@' }
+let s:Doc.placeholder = { -> '$PLACEHOLDER' }
 
 let s:Doc.leadingSpaceAfterComment = { -> 0 }
 
@@ -383,9 +383,11 @@ endfun "}}}
 
 fun! s:Doc.make_templates() abort
   let style = self.style.get_style()
+  let ph = self.placeholder()
   for x in self.sections()
     let fmt = eval('self.'.x.'Fmt()')
     let self.templates[x] = type(fmt) == v:t_dict ? fmt[style] : fmt
+    call map(self.templates[x], 'substitute(v:val, "%p", ph, "")')
   endfor
 endfun
 
@@ -405,7 +407,7 @@ fun! s:Doc.format() abort
     let self.lines.header = filter(self.headerLines(), { k,v -> v != '' })
   else
     " process params and return first, if absent the docstring could be reduced
-    let self.lines.params = s:align(self.paramsLines())
+    let self.lines.params = s:align(self.paramsLines(), self.placeholder())
     let self.lines.detail = self.detailLines()
     let self.lines.return = self.retLines()
     let self.lines.header = self.headerLines()
@@ -717,31 +719,31 @@ let s:Style = {
 " backup minimal formatters if something goes really out of its way
 ""
 let s:Style._fmt = {
-      \ 'header':  ['%s:' . s:ph],
-      \ 'params':  ['param %s: ' . s:ph],
-      \ 'tparams': ['tparam %s: ' . s:ph],
-      \ 'rtype':   ['return: ' . s:ph],
+      \ 'header':  ['%s:%p'],
+      \ 'params':  ['param %s: %p'],
+      \ 'tparams': ['tparam %s: %p'],
+      \ 'rtype':   ['return: %p'],
       \}
 
 let s:Style.fmt.header = {
-      \ 'boxed':    ['Function: %s' . s:ph, ''],
-      \ 'default':  ['Function: %s' . s:ph, ''],
-      \ 'simple':   ['%s:' . s:ph],
-      \ 'minimal':  ['%s:' . s:ph],
+      \ 'boxed':    ['Function: %s%p', ''],
+      \ 'default':  ['Function: %s%p', ''],
+      \ 'simple':   ['%s:%p'],
+      \ 'minimal':  ['%s:%p'],
       \}
 
 let s:Style.fmt.params = {
-      \ 'boxed':    ['param %s: ' . s:ph],
-      \ 'default':  ['param %s: ' . s:ph],
-      \ 'simple':   ['param %s: ' . s:ph],
-      \ 'minimal':  ['param %s: ' . s:ph],
+      \ 'boxed':    ['param %s: %p'],
+      \ 'default':  ['param %s: %p'],
+      \ 'simple':   ['param %s: %p'],
+      \ 'minimal':  ['param %s: %p'],
       \}
 
 let s:Style.fmt.rtype = {
-      \ 'boxed':    ['return: ' . s:ph],
-      \ 'default':  ['return: ' . s:ph],
-      \ 'simple':   ['return: ' . s:ph],
-      \ 'minimal':  ['return: ' . s:ph],
+      \ 'boxed':    ['return: %p'],
+      \ 'default':  ['return: %p'],
+      \ 'simple':   ['return: %p'],
+      \ 'minimal':  ['return: %p'],
       \}
 
 ""
@@ -962,11 +964,11 @@ fun! s:c.rtypeFmt() abort
   endif
   let [rtype, ch] = [self.parsed.rtype, self.jollyChar()]
   return {
-        \ 'kernel':      ['Returns ' . rtype . ': ' . s:ph],
-        \ 'kernelboxed': ['Returns ' . rtype . ': ' . s:ph],
-        \ 'boxed':       [ch . 'return ' . rtype . ': ' . s:ph],
-        \ 'default':     [ch . 'return ' . rtype . ': ' . s:ph],
-        \ 'simple':      [ch . 'return: ' . s:ph],
+        \ 'kernel':      ['Returns ' . rtype . ': %p'],
+        \ 'kernelboxed': ['Returns ' . rtype . ': %p'],
+        \ 'boxed':       [ch . 'return ' . rtype . ': %p'],
+        \ 'default':     [ch . 'return ' . rtype . ': %p'],
+        \ 'simple':      [ch . 'return: %p'],
         \ 'minimal':     [],
         \ 'minimalboxed': [],
         \}
@@ -975,11 +977,11 @@ endfun
 fun! s:c.paramsFmt() abort
   let ch = self.jollyChar()
   return {
-        \ 'kernel':      [ch . '%s: ' . s:ph],
-        \ 'kernelboxed': [ch . '%s: ' . s:ph],
-        \ 'boxed':       [ch . 'param %s: ' . s:ph],
-        \ 'default':     [ch . 'param %s: ' . s:ph],
-        \ 'simple':      ['%s', s:ph],
+        \ 'kernel':      [ch . '%s: %p'],
+        \ 'kernelboxed': [ch . '%s: %p'],
+        \ 'boxed':       [ch . 'param %s: %p'],
+        \ 'default':     [ch . 'param %s: %p'],
+        \ 'simple':      ['%s%p'],
         \ 'minimal':     [],
         \ 'minimalboxed': [],
         \}
@@ -988,13 +990,13 @@ endfun
 fun! s:c.headerFmt()
   let ch = self.jollyChar()
   return {
-        \ 'kernel':      ['%s() - ' . s:ph],
-        \ 'kernelboxed': ['%s() - ' . s:ph],
-        \ 'boxed':       [ch . 'brief %s: ' . s:ph],
-        \ 'default':     [ch . 'brief %s: ' . s:ph],
-        \ 'simple':      ['%s', s:ph],
-        \ 'minimal':     ['%s:' . s:ph],
-        \ 'minimalboxed': ['%s:' . s:ph],
+        \ 'kernel':      ['%s() - %p'],
+        \ 'kernelboxed': ['%s() - %p'],
+        \ 'boxed':       [ch . 'brief %s: %p'],
+        \ 'default':     [ch . 'brief %s: %p'],
+        \ 'simple':      ['%s%p'],
+        \ 'minimal':     ['%s:%p'],
+        \ 'minimalboxed': ['%s:%p'],
         \}
 endfun
 
@@ -1046,13 +1048,13 @@ fun! s:c.paramsNames() abort
 endfun
 
 fun! s:c.detailLines() abort
-  return self.style.get_style() =~ 'kernel' ? ['', s:ph] : []
+  return self.style.get_style() =~ 'kernel' ? ['', self.placeholder()] : []
 endfun
 
 fun! s:c.headerLines() abort
   let header = self.templates.header
   if empty(self.lines.params) && empty(self.lines.return)
-    return [ self.parsed.name . ':' . s:ph ]
+    return [ self.parsed.name . ':' . self.placeholder() ]
   endif
   return map(header, { k,v -> v =~ '%s' ? printf(v, self.parsed.name) : v })
 endfun
@@ -1078,11 +1080,11 @@ fun! s:c.storageLines() abort
   let type = all[1]
   let name = all[2]
   if getline(self.startLn) =~ 'typedef'
-    return ['typedef ' . trim(name) . ': ' .s:ph]
+    return ['typedef ' . trim(name) . ': ' .self.placeholder()]
   elseif name != ''
-    return [trim(type) . ' ' . trim(name) . ': ' . s:ph]
+    return [trim(type) . ' ' . trim(name) . ': ' . self.placeholder()]
   else
-    return [trim(type) . ': ' . s:ph]
+    return [trim(type) . ': ' . self.placeholder()]
   endif
 endfun "}}}
 
@@ -1102,11 +1104,11 @@ let s:cpp = extend(copy(s:c), {
 fun! s:cpp.tparamsFmt() abort
   let ch = self.jollyChar()
   return {
-        \ 'kernel':      [ch . '%s: ' . s:ph],
-        \ 'kernelboxed': [ch . '%s: ' . s:ph],
-        \ 'boxed':       [ch . 'tparam %s: ' . s:ph],
-        \ 'default':     [ch . 'tparam %s: ' . s:ph],
-        \ 'simple':      ['%s: ' . s:ph],
+        \ 'kernel':      [ch . '%s: %p'],
+        \ 'kernelboxed': [ch . '%s: %p'],
+        \ 'boxed':       [ch . 'tparam %s: %p'],
+        \ 'default':     [ch . 'tparam %s: %p'],
+        \ 'simple':      ['%s: %p'],
         \ 'minimal':     [],
         \ 'minimalboxed': [],
         \}
@@ -1117,13 +1119,13 @@ fun! s:cpp.headerFmt()
   let f = m == '' ? 'Function' : '[' . m . '] Method'
   let s = m == '' ? '' : m . '.'
   return {
-        \ 'kernel':      [s . '%s() - ' . s:ph],
-        \ 'kernelboxed': [s . '%s() - ' . s:ph],
-        \ 'boxed':       [self.jollyChar() . 'brief %s: ' . s:ph, ''],
-        \ 'default':     [self.jollyChar() . 'brief %s: ' . s:ph, ''],
-        \ 'simple':      [s . '%s:' . s:ph],
-        \ 'minimal':     [s . '%s:' . s:ph, ''],
-        \ 'minimalboxed': [s . '%s:' . s:ph, ''],
+        \ 'kernel':      [s . '%s() - %p'],
+        \ 'kernelboxed': [s . '%s() - %p'],
+        \ 'boxed':       [self.jollyChar() . 'brief %s: %p', ''],
+        \ 'default':     [self.jollyChar() . 'brief %s: %p', ''],
+        \ 'simple':      [s . '%s:%p'],
+        \ 'minimal':     [s . '%s:%p', ''],
+        \ 'minimalboxed': [s . '%s:%p', ''],
         \}
 endfun
 
@@ -1187,8 +1189,8 @@ endfun
 
 let s:vim = {
       \ 'parsers': { -> ['^fu\k*!\?\s%s%s%s%s'] },
-      \ 'comment': { -> ['""', '"', '""', '='] },
-      \ 'fmt': {'rtype': {'default': ['Returns: ' . s:ph], 'boxed': ['Returns: ' . s:ph]}}
+      \ 'comment': { -> ['"', '"', '"', '='] },
+      \ 'fmt': {'rtype': {'default': ['Returns: %p'], 'boxed': ['Returns: %p']}}
       \}
 
 "{{{1
@@ -1229,7 +1231,7 @@ let s:python = {
 fun! s:python.rtypeFmt() abort
   let rtype = substitute(self.parsed.rtype, '\s*->\s*', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
-  return [self.jollyChar() . 'return: ' . rtype . ' ' . s:ph]
+  return [self.jollyChar() . 'return: ' . rtype . ' %p']
 endfun
 
 fun! s:python.comment() abort
@@ -1284,10 +1286,10 @@ fun! s:java.rtypeFmt() abort
   if self.parsed.rtype == 'void' || self.parsed.rtype == ''
     return []
   elseif self.parsed.rtype !~ '\S'
-    return [self.jollyChar() . 'return: ' . s:ph]
+    return [self.jollyChar() . 'return: %p']
   else
     let rtype = substitute(self.parsed.rtype, '<.*>', '', '')
-    return [self.jollyChar() . 'return ' . rtype . ': ' . s:ph]
+    return [self.jollyChar() . 'return ' . rtype . ': %p']
   endif
 endfun
 
@@ -1297,7 +1299,7 @@ endfun
 
 let s:ruby = {
       \ 'parsers': { -> ['^\s*def\s\+%s%s[=!]\?%s%s'] },
-      \ 'headerFmt': { -> [s:ph] },
+      \ 'headerFmt': { -> ['%p'] },
       \ 'comment': { -> ['#', '#', '#', '-'] }
       \}
 
@@ -1317,10 +1319,10 @@ fun! s:go.headerFmt()
   let f = m == '' ? 'Function' : '[' . m . '] Method'
   let s = m == '' ? '' : m . '.'
   return {
-      \ 'boxed':    [f . ': %s' . s:ph, ''],
-      \ 'default':  [f . ': %s' . s:ph, ''],
-      \ 'simple':   [s . '%s:' . s:ph],
-      \ 'minimal':  [s . '%s:' . s:ph, ''],
+      \ 'boxed':    [f . ': %s%p', ''],
+      \ 'default':  [f . ': %s%p', ''],
+      \ 'simple':   [s . '%s:%p'],
+      \ 'minimal':  [s . '%s:%p', ''],
       \}
 endfun
 
@@ -1328,7 +1330,7 @@ fun! s:go.rtypeFmt() abort
   let rtype = substitute(self.parsed.rtype, '^(', '', '')
   let rtype = substitute(rtype, ')$', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
-  return [self.jollyChar() . 'return: ' . rtype . ' ' . s:ph]
+  return [self.jollyChar() . 'return: ' . rtype . ' %p']
 endfun
 
 fun! s:go.paramsNames() abort
@@ -1357,7 +1359,7 @@ endfun
 " @param ...:   an optional pattern, if found the line is kept as it is
 " @return:      the aligned lines
 ""
-fun! s:align(lines, ...) abort
+fun! s:align(lines, ph, ...) abort
   " {{{1
   let maxlen = max(map(copy(a:lines), { k,v -> strlen(a:0 && v =~ a:1 ? "" : v) }))
   if maxlen > 50 " don't align if lines are too long
@@ -1366,9 +1368,9 @@ fun! s:align(lines, ...) abort
   for l in range(len(a:lines))
     if a:0 && a:lines[l] =~ '\V' . a:1
       continue
-    elseif a:lines[l] =~ '\V' . s:ph
+    elseif a:lines[l] =~ '\V' . a:ph
       let spaces = repeat(' ', maxlen - strlen(a:lines[l]))
-      let a:lines[l] = substitute(a:lines[l], '\V' . s:ph, spaces . s:ph, '')
+      let a:lines[l] = substitute(a:lines[l], '\V' . a:ph, spaces . a:ph, '')
     endif
   endfor
   return a:lines

@@ -47,7 +47,7 @@ function! docgen#preserve#lines(oldlines) abort dict
     call add(oldlines[k], ol)
   endfor
 
-  call s:transfer_equal_lines(self.lines, oldlines)
+  call s:transfer_equal_lines(self.lines, oldlines, self.placeholder())
 
   " here we handle extra edits, that is text inserted by the user
   call s:fill_header(self.lines.header, oldlines.header)
@@ -69,11 +69,11 @@ endfunction "}}}
 " @param new: the new lines
 " @param old: the old lines
 ""
-function! s:transfer_equal_lines(new, old) abort
+function! s:transfer_equal_lines(new, old, ph) abort
   " we keep the lines that look similar
   for section in ['header', 'detail', 'params', 'return']
     for ix in range(len(a:new[section]))
-      let line = substitute(a:new[section][ix], '\V$'.'PLACEHOLDER', '', 'g')
+      let line = substitute(a:new[section][ix], '\V'.escape(a:ph, '\'), '', 'g')
       for ol in a:old[section]
         if line != '' && ol =~ '^\V' . trim(line)
           let a:new[section][ix] = ol

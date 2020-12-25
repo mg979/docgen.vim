@@ -136,6 +136,7 @@ def run_core(test, paths, nvim=False):
         CLIENT = attach("socket", path=str(paths["socket"]))
         # run test
         CLIENT.command("e %s" % paths["in_file"])
+        CLIENT.command("let b:docgen = {'placeholder': { -> '$PLACEHOLDER' }}")
         keys = keys_nvim
         start_time = time.process_time()
         commands = open(paths["command"]).readlines()
@@ -151,6 +152,7 @@ def run_core(test, paths, nvim=False):
         vim = vimrunner.Server(noplugin=False, vimrc=paths["vimrc"], executable=VIM)
         CLIENT = vim.start()
         CLIENT.edit(paths["in_file"])
+        CLIENT.feedkeys(":let b:docgen = {'placeholder': { -> '$PLACEHOLDER' }}\<Esc>")
         keys = keys_vim
         start_time = time.process_time()
         exec(open(paths["command"]).read())
