@@ -90,7 +90,7 @@ fun! docgen#func(bang, count) abort
   call doc.format()
 
   " keep the old lines of the previous docstring, if unchanged
-  let lines = doc.preserve_oldlines( doc.previous_docstring(startLn, doc.below()) )
+  let lines = doc.preserve_oldlines( doc.previous_docstring(startLn) )
 
   " align placeholders and create box
   let lines = doc.create_box(lines)

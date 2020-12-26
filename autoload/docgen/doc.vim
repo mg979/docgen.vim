@@ -400,6 +400,29 @@ endfun "}}}
 
 let s:Doc.preserve_oldlines = function('docgen#preserve#lines')
 
+""
+" Function: s:Doc.remove_previous
+" @param start: the line where the command is started
+" @return: the lines of the removed docstring, or an empty list
+""
+fun! s:Doc.remove_previous(start) abort
+  " {{{1
+  let lines = []
+  let curr = a:start
+  let next = self.below() ? 1 : -1
+  let last = self.below() ? line('$') : 1
+  while curr != last
+    if self.is_comment(curr + next)
+      let curr += next
+      call add(lines, getline(curr))
+      exe curr . 'd_'
+    else
+      break
+    endif
+  endwhile
+  return lines
+endfun "}}}
+
 
 ""
 " Function: s:Doc.previous_docstring
@@ -408,35 +431,9 @@ let s:Doc.preserve_oldlines = function('docgen#preserve#lines')
 " @param below: whether the docstring will be added below the declaration
 " @return: the lines in the docstring before update
 ""
-fun! s:Doc.previous_docstring(start, below) abort
+fun! s:Doc.previous_docstring(start) abort
   " {{{1
-  let lines = []
-  let start = a:start
-  if !a:below
-    while 1
-      if start == 1
-        break
-      elseif self.is_comment(start - 1)
-        call add(lines, getline(start - 1))
-        exe (start - 1) . 'd _'
-        let start -= 1
-      else
-        break
-      endif
-    endwhile
-  else
-    while 1
-      if start == line('$')
-        break
-      elseif self.is_comment(start + 1)
-        call add(lines, getline(start + 1))
-        exe (start + 1) . 'd _'
-        let start += 1
-      else
-        break
-      endif
-    endwhile
-  endif
+  let lines = self.remove_previous(a:start)
   if !empty(lines)
     let c = self.comment()
     while trim(lines[0]) !~ '\k'
