@@ -2,6 +2,8 @@
 
 Vim/neovim plugin for code documentation.
 
+[![asciicast](https://asciinema.org/a/381326.svg)](https://asciinema.org/a/381326)
+
 There is [vim-doge](https://github.com/kkoomen/vim-doge) already, how is this different?
 
 Cons:
