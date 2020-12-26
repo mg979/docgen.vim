@@ -4,17 +4,17 @@
 ""
 fun! docgen#doc#new(is_docstring) abort
   "{{{1
-  " b:docgen can create a new s:{&filetype} variable, to add support for
-  " unsupported filetypes
+  let doc = extend(deepcopy(s:Doc), docgen#create#box())
+
+  " b:docgen can add customizations or support for unsupported filetypes
   if exists('b:docgen')
     let s:{&filetype} = extend(s:FT(), b:docgen)
   endif
+  call extend(doc, s:FT())
 
-  let doc = extend(deepcopy(s:Doc), s:FT())
   let doc.style = docgen#style#get()
   let doc.style.is_docstring = a:is_docstring
-  " so that s:Style can access the current instance
-  let doc.style.doc = doc
+  let doc.style.doc = doc " s:Style can now access the current instance
   return doc
 endfun "}}}
 
@@ -398,146 +398,6 @@ fun! s:Doc.comment()
 endfun "}}}
 
 
-let s:Doc.preserve_oldlines = function('docgen#preserve#lines')
-
-""
-" Function: s:Doc.remove_previous
-" @param start: the line where the command is started
-" @return: the lines of the removed docstring, or an empty list
-""
-fun! s:Doc.remove_previous(start) abort
-  " {{{1
-  let lines = []
-  let curr = a:start
-  let next = self.below() ? 1 : -1
-  let last = self.below() ? line('$') : 1
-  while curr != last
-    if self.is_comment(curr + next)
-      let curr += next
-      call add(lines, getline(curr))
-      exe curr . 'd_'
-    else
-      break
-    endif
-  endwhile
-  return lines
-endfun "}}}
-
-
-""
-" Function: s:Doc.previous_docstring
-"
-" @param start: start line
-" @param below: whether the docstring will be added below the declaration
-" @return: the lines in the docstring before update
-""
-fun! s:Doc.previous_docstring(start) abort
-  " {{{1
-  let lines = self.remove_previous(a:start)
-  if !empty(lines)
-    let c = self.comment()
-    while trim(lines[0]) !~ '\k'
-      call remove(lines, 0)
-    endwhile
-    while trim(lines[-1]) !~ '\k'
-      call remove(lines, -1)
-    endwhile
-    for ix in range(len(lines))
-      if lines[ix] !~ '\k'
-        let lines[ix] = ''
-      else
-        try
-          let lines[ix] = substitute(lines[ix], '^\V\s\*' . c[1] . '\+\s\?', '', '')
-          let lines[ix] = substitute(lines[ix], '\V\s\+' . c[1] . '\_$', '', '')
-        catch /.*/
-        endtry
-      endif
-    endfor
-  endif
-  return reverse(lines)
-endfun "}}}
-
-
-""
-" Function: s:Doc.create_box
-" Create a box with the docstring
-"
-" @param lines: the docstring lines
-" @param boxed: with full frame or not
-" @param rchar: character used for full frame
-" @param extraHeight: additional empty lines near the edges
-" @return: the box lines
-""
-fun! s:Doc.create_box(lines) abort
-  " {{{1
-  let [a, m, b, _] = self.comment()[:3]
-  let rwidth = &tw ? &tw : 79
-  let char = self.frameChar()
-  if self.boxed() && a == '/**'
-    let box1 = a . repeat(char, rwidth - strlen(a))
-    let box2 = ' ' . repeat(char, rwidth - strlen(b)) . trim(b)
-  elseif self.boxed()
-    if !self.style.is_docstring && self.leadingSpaceAfterComment()
-      let [a, b] = [a . ' ', b . ' ']
-    endif
-    let box1 = a . repeat(char, rwidth - strlen(a))
-    let box2 = b . repeat(char, rwidth - strlen(b))
-  else
-    let box1 = a
-    let box2 = b
-  endif
-  let extra = map(range(self.style.extraHeight), { k,v -> m })
-  let post = self.style.is_docstring ? self.comment()[4:] : []
-  ""
-  " Reformat the lines as comment. Top and bottom lines are not handled here.
-  "   - empty line ? comment char(s)
-  "   - no comment char(s) (eg. python docstrings)? just the line
-  "   - both? concatenate comment chars and line, with a space in between
-  ""
-  call map(a:lines, 'v:val == "" ? m : m == "" ? v:val : (m . " " . v:val)')
-  return [box1] + extra + a:lines + extra + [box2] + post
-endfun "}}}
-
-
-""
-" Function: s:Doc.reindent_box
-"
-" @param lines: the lines to reindent
-""
-fun! s:Doc.reindent_box(lines) abort
-  "{{{1
-  silent keepjumps normal! `[=`]
-  let ind = matchstr(getline('.'), '^\s*')
-  let lines = map(a:lines, "substitute(v:val, '^\s*', ind, '')")
-  let [first, i, char] = [line('.') + 1, line('.'), self.frameChar()]
-  let maxw = (&tw ? &tw : 79) - strdisplaywidth(ind) + strlen(ind)
-  " executing DocBox on a previous comment and wanting a full box
-  let is_boxifying_comment = !self.style.is_docstring &&
-        \                     self.was_comment && self.style.fullbox
-
-  for line in lines
-    if strlen(line) > maxw
-      let removeChars = printf('\V%s\{%s}', char, strlen(line) - maxw)
-      let line = substitute(line, removeChars, '', '')
-    endif
-    if is_boxifying_comment && strlen(line) < maxw
-      let line .= repeat(' ', maxw - strdisplaywidth(line) - strwidth(char)) . char
-      if self.style.centered && i == first
-        let cchar = trim(self.comment()[1])
-        let ind = matchstr(line, '^\s*')
-        let text = trim(matchstr(line, '^\V\s\*' . cchar . '\zs\.\*\ze' . char))
-        let spaces = maxw - strlen(ind) - strdisplaywidth(text) - strwidth(char) - strwidth(cchar)
-        let s = repeat(' ', spaces/2)
-        let [s1, s2] = spaces % 2 ? [s, s . ' '] : [s, s]
-        let line = ind . cchar . s1 . text . s2 . char
-      endif
-    endif
-    call setline(i, line)
-    let i += 1
-  endfor
-endfun "}}}
-
-
 ""
 " Function: s:Doc.is_comment
 "
@@ -547,40 +407,6 @@ endfun "}}}
 fun! s:Doc.is_comment(line) abort
   "{{{1
   return synIDattr(synID(a:line, match(a:line, '\S') + 1, 1), "name") =~? 'comment'
-endfun "}}}
-
-
-""
-" Function: s:Doc.replace_comment
-" Replace previous docstring with the new one.
-"
-" @return: the removed lines, if not empty
-""
-fun! s:Doc.replace_comment() abort
-  "{{{1
-  let startLn = 0
-  if self.is_comment(line('.'))
-    let [startLn, endLn] = [line('.'), line('.')]
-    while self.is_comment(startLn - 1)
-      let startLn -= 1
-    endwhile
-    while self.is_comment(endLn + 1)
-      let endLn += 1
-    endwhile
-    let lines = getline(startLn, endLn)
-    " strip the previous comment chars
-    call map(lines, { k,v -> substitute(v, '^\s*[[:punct:]]\+\%(\s*\_$\|\s\)', '', '') })
-    if empty(lines[0])
-      call remove(lines, 0)
-    endif
-    if empty(lines[-1])
-      call remove(lines, -1)
-    endif
-    exe startLn . ',' . endLn . 'd _'
-  else
-    let lines = ['']
-  endif
-  return lines
 endfun "}}}
 
 
