@@ -41,5 +41,38 @@ fun! s:python.paramsNames() abort
   return split(params, ',')
 endfun
 
+""
+" Function: s:Doc.remove_previous
+"
+" python needs a different handling because docstrings can contain empty lines.
+" We're only handling docstrings put below function definition.
+"
+" @param start: the line where the command is started
+" @return: the lines of the removed docstring, or an empty list
+""
+fun! s:python.remove_previous(start) abort
+  " {{{1
+  let lines = []
+  if !search('^\s*"""', 'n', a:start + 1)
+      return []
+  endif
+  +
+  let begin = line('.')
+  if getline('.') =~ '^\s*""".*"""$'
+      let end = begin
+      let lines = [substitute(getline('.'), '"""\s*', '', 'g')]
+  else
+      let end = search('^\s*"""', 'n')
+      let lines = getline(begin, end)
+  endif
+
+  let next = self.below() ? 1 : -1
+  let last = self.below() ? line('$') : 1
+  exe begin . ',' . end . 'd_'
+  -
+  return lines
+endfun "}}}
+
+
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 "vim: ft=vim et sw=4 fd=marker
