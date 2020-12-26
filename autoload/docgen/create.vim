@@ -199,7 +199,7 @@ function! s:Doc.preserve_oldlines(oldlines) abort
 
   let c = self.ctrlChar()
   " the pattern that starts the 'return' section
-  let rpat = '^\c\V' . c . '\?return\|rtype'
+  let rpat = '^\c\V' . c . '\?\(return\|rtype\)'
   " any other pattern with control char starts the 'params' section
   let ppat = '^\c\V' . c
 
@@ -211,7 +211,7 @@ function! s:Doc.preserve_oldlines(oldlines) abort
       let k = 'return'
     elseif ol =~ ppat
       let k = 'params'
-    elseif k == 'params' && ol =~ dpat
+    elseif k == 'params' && ol == ''
       let k = 'detail'
     endif
     call add(oldlines[k], ol)
