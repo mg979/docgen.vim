@@ -50,7 +50,7 @@ fun! s:c.rtypeFmt() abort
   if self.parsed.rtype == 'void'
     return []
   endif
-  let [rtype, ch] = [self.parsed.rtype, self.jollyChar()]
+  let [rtype, ch] = [self.parsed.rtype, self.ctrlChar()]
   return {
         \ 'kernel':      ['Returns ' . rtype . ': %p'],
         \ 'kernelboxed': ['Returns ' . rtype . ': %p'],
@@ -63,7 +63,7 @@ fun! s:c.rtypeFmt() abort
 endfun
 
 fun! s:c.paramsFmt() abort
-  let ch = self.jollyChar()
+  let ch = self.ctrlChar()
   return {
         \ 'kernel':      [ch . '%s: %p'],
         \ 'kernelboxed': [ch . '%s: %p'],
@@ -76,7 +76,7 @@ fun! s:c.paramsFmt() abort
 endfun
 
 fun! s:c.headerFmt()
-  let ch = self.jollyChar()
+  let ch = self.ctrlChar()
   return {
         \ 'kernel':      ['%s() - %p'],
         \ 'kernelboxed': ['%s() - %p'],
@@ -190,7 +190,7 @@ let s:cpp = extend(copy(s:c), {
 
 "{{{1
 fun! s:cpp.tparamsFmt() abort
-  let ch = self.jollyChar()
+  let ch = self.ctrlChar()
   return {
         \ 'kernel':      [ch . '%s: %p'],
         \ 'kernelboxed': [ch . '%s: %p'],
@@ -209,8 +209,8 @@ fun! s:cpp.headerFmt()
   return {
         \ 'kernel':      [s . '%s() - %p'],
         \ 'kernelboxed': [s . '%s() - %p'],
-        \ 'boxed':       [self.jollyChar() . 'brief %s: %p', ''],
-        \ 'default':     [self.jollyChar() . 'brief %s: %p', ''],
+        \ 'boxed':       [self.ctrlChar() . 'brief %s: %p', ''],
+        \ 'default':     [self.ctrlChar() . 'brief %s: %p', ''],
         \ 'simple':      [s . '%s:%p'],
         \ 'minimal':     [s . '%s:%p', ''],
         \ 'minimalboxed': [s . '%s:%p', ''],

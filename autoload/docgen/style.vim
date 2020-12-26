@@ -188,14 +188,14 @@ fun! s:Style.get_fmt(section) abort
       if a:section == 'header'
         return copy(self.fmt[a:section][style])
       else
-        return map(copy(self.fmt[a:section][style]), 'v:val != "" ? self.doc.jollyChar() . v:val : ""')
+        return map(copy(self.fmt[a:section][style]), 'v:val != "" ? self.doc.ctrlChar() . v:val : ""')
       endif
     catch
       " eg: self._fmt.header
       if a:section == 'header'
         return copy(self._fmt[a:section])
       else
-        return map(copy(self._fmt[a:section]), 'v:val != "" ? self.doc.jollyChar() . v:val : ""')
+        return map(copy(self._fmt[a:section]), 'v:val != "" ? self.doc.ctrlChar() . v:val : ""')
       endif
     endtry
   endtry

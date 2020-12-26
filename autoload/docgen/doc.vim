@@ -70,7 +70,7 @@ let s:Doc.storageLines = { -> [] }
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:Doc.putBelow                 = { -> 0 }
-let s:Doc.jollyChar                = { -> '@' }
+let s:Doc.ctrlChar                = { -> '@' }
 let s:Doc.placeholder              = { -> '___' }
 let s:Doc.leadingSpaceAfterComment = { -> 0 }
 

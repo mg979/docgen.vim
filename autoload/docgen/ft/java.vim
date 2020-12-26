@@ -15,10 +15,10 @@ fun! s:java.rtypeFmt() abort
   if self.parsed.rtype == 'void' || self.parsed.rtype == ''
     return []
   elseif self.parsed.rtype !~ '\S'
-    return [self.jollyChar() . 'return: %p']
+    return [self.ctrlChar() . 'return: %p']
   else
     let rtype = substitute(self.parsed.rtype, '<.*>', '', '')
-    return [self.jollyChar() . 'return ' . rtype . ': %p']
+    return [self.ctrlChar() . 'return ' . rtype . ': %p']
   endif
 endfun
 

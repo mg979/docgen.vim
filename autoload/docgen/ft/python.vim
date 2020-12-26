@@ -8,14 +8,14 @@ let s:python = {
       \ 'parsers':   { -> ['^\s*%s%s%s%s:'] },
       \ 'typePat':   { -> '\(class\|def\)\s*' },
       \ 'putBelow':  { -> 1 },
-      \ 'jollyChar': { -> ':' },
+      \ 'ctrlChar': { -> ':' },
       \ 'leadingSpaceAfterComment': { -> 1 },
       \}
 
 fun! s:python.rtypeFmt() abort
   let rtype = substitute(self.parsed.rtype, '\s*->\s*', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
-  return [self.jollyChar() . 'return: ' . rtype . ' %p']
+  return [self.ctrlChar() . 'return: ' . rtype . ' %p']
 endfun
 
 fun! s:python.comment() abort

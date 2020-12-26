@@ -197,9 +197,7 @@ function! s:Doc.preserve_oldlines(oldlines) abort
     return self.lines.header + a:oldlines[1:]
   endif
 
-  let c = self.jollyChar()
-  " the pattern that starts the 'detail' section
-  let dpat = get(self, 'detailPat', '\s*\u')
+  let c = self.ctrlChar()
   " the pattern that starts the 'return' section
   let rpat = '^\c\V' . c . '\?return\|rtype'
   " any other pattern with control char starts the 'params' section

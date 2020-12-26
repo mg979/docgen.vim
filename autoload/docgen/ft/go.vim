@@ -27,7 +27,7 @@ fun! s:go.rtypeFmt() abort
   let rtype = substitute(self.parsed.rtype, '^(', '', '')
   let rtype = substitute(rtype, ')$', '', '')
   let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
-  return [self.jollyChar() . 'return: ' . rtype . ' %p']
+  return [self.ctrlChar() . 'return: ' . rtype . ' %p']
 endfun
 
 fun! s:go.paramsNames() abort
