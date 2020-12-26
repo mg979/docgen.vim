@@ -32,44 +32,38 @@ fun! s:Doc.remove_previous(start) abort
     if self.is_comment(curr + next)
       let curr += next
       call add(lines, getline(curr))
-      exe curr . 'd_'
     else
       break
     endif
   endwhile
-  return reverse(lines)
+  if empty(lines)
+    return []
+  elseif self.below()
+    exe (a:start + 1) . ',' . curr . 'd_'
+    " I must go up one line here, maybe because d_ moves the cursor
+    -
+  else
+    exe curr . ',' . (a:start - 1) . 'd_'
+  endif
+  return self.below() ? lines : reverse(lines)
 endfun "}}}
 
 
 ""
 " Function: s:Doc.previous_docstring
 " @param start: start line
-" @param below: whether the docstring will be added below the declaration
 " @return: the lines in the docstring before update
 ""
 fun! s:Doc.previous_docstring(start) abort
   " {{{1
   let lines = self.remove_previous(a:start)
-  if !empty(lines)
-    let c = self.comment()
-    while trim(lines[0]) !~ '\k'
-      call remove(lines, 0)
-    endwhile
-    while trim(lines[-1]) !~ '\k'
-      call remove(lines, -1)
-    endwhile
-    for ix in range(len(lines))
-      if lines[ix] !~ '\k'
-        let lines[ix] = ''
-      else
-        try
-          let lines[ix] = substitute(lines[ix], '^\V\s\*' . c[1] . '\+\s\?', '', '')
-          let lines[ix] = substitute(lines[ix], '\V\s\+' . c[1] . '\_$', '', '')
-        catch /.*/
-        endtry
-      endif
-    endfor
-  endif
+  " empty (commented) line pattern
+  let emptln = '\V\_^\s\*'. trim(self.comment()[1]) .'\_$'
+  " leading comment characters with optional space
+  let cmtpat = '\V\_^\s\*'. self.comment()[1] . ' \?'
+  " keep lines with some keyword character, or empty lines within docstring
+  call filter(lines, 'v:val =~ "\\k" || v:val =~ emptln')
+  let lines = map(lines, 'substitute(v:val, cmtpat, "", "")')
   return lines
 endfun "}}}
 
@@ -78,11 +72,9 @@ endfun "}}}
 " Function: s:Doc.create_box
 " Create a box with the docstring
 "
-" @param lines: the docstring lines
-" @param boxed: with full frame or not
-" @param rchar: character used for full frame
-" @param extraHeight: additional empty lines near the edges
-" @return: the box lines
+" @param lines: the uncommented docstring lines (DocGen), or the previous
+"               comment (DocBox)
+" Returns: the box lines
 ""
 fun! s:Doc.create_box(lines) abort
   " {{{1

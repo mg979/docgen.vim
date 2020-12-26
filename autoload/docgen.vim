@@ -90,10 +90,11 @@ fun! docgen#func(bang, count) abort
   call doc.format()
 
   " keep the old lines of the previous docstring, if unchanged
-  let lines = doc.preserve_oldlines( doc.previous_docstring(startLn) )
+  let oldlines = doc.previous_docstring(startLn)
+  let newlines = doc.preserve_oldlines(oldlines)
 
-  " align placeholders and create box
-  let lines = doc.create_box(lines)
+  " create new docstring
+  let lines = doc.create_box(newlines)
 
   exe 'silent ' ( doc.below() ? '' : '-1' ) . 'put =lines'
   call doc.reindent_box(lines)
