@@ -72,27 +72,35 @@ endfun "}}}
 " Function: s:Doc.create_box
 " Create a box with the docstring
 "
-" @param lines: the uncommented docstring lines (DocGen), or the previous
-"               comment (DocBox)
+" @param lines: the uncommented docstring lines (DocGen), or the lines of the
+"               previous comment (DocBox)
 " Returns: the box lines
 ""
 fun! s:Doc.create_box(lines) abort
   " {{{1
+  ""
+  " First we define the box frame elements:
+  "   - top: the top line of the box
+  "   - btm: the bottom line of the box
+  "   - extra: optional extra empty lines to be added between top and content,
+  "            and between content and bottom.
+  "   - post: optional lines that go after the bottom line of the frame
+  ""
   let [a, m, b, _] = self.comment()[:3]
-  let rwidth = &tw ? &tw : 79
+  let tw = &tw ? &tw : 79
   let char = self.frameChar()
   if self.boxed() && a == '/**'
-    let box1 = a . repeat(char, rwidth - strlen(a))
-    let box2 = ' ' . repeat(char, rwidth - strlen(b)) . trim(b)
+    let top = a . repeat(char, tw - strlen(a))
+    let btm = ' ' . repeat(char, tw - strlen(b)) . trim(b)
   elseif self.boxed()
     if !self.style.is_docstring && self.leadingSpaceAfterComment()
       let [a, b] = [a . ' ', b . ' ']
     endif
-    let box1 = a . repeat(char, rwidth - strlen(a))
-    let box2 = b . repeat(char, rwidth - strlen(b))
+    let top = a . repeat(char, tw - strlen(a))
+    let btm = b . repeat(char, tw - strlen(b))
   else
-    let box1 = a
-    let box2 = b
+    let top = a
+    let btm = b
   endif
   let extra = map(range(self.style.extraHeight), { k,v -> m })
   let post = self.style.is_docstring ? self.comment()[4:] : []
@@ -103,7 +111,7 @@ fun! s:Doc.create_box(lines) abort
   "   - both? concatenate comment chars and line, with a space in between
   ""
   call map(a:lines, 'v:val == "" ? m : m == "" ? v:val : (m . " " . v:val)')
-  return [box1] + extra + a:lines + extra + [box2] + post
+  return [top] + extra + a:lines + extra + [btm] + post
 endfun "}}}
 
 
@@ -128,6 +136,7 @@ fun! s:Doc.reindent_box(lines) abort
       let removeChars = printf('\V%s\{%s}', char, strlen(line) - maxw)
       let line = substitute(line, removeChars, '', '')
     endif
+    " making a full comment box, closed from all four sides
     if is_boxifying_comment && strlen(line) < maxw
       let line .= repeat(' ', maxw - strdisplaywidth(line) - strwidth(char)) . char
       if self.style.centered && i == first
@@ -184,9 +193,8 @@ endfun "}}}
 " Keep the valid lines of the previous docstring
 "
 " We break also oldlines in sections: we assume that parameters descriptions
-" can span multiple lines, but new lines should not start with an uppercase
-" letter. We assume instead that a paragraph with a long description starts
-" with an uppercase letter, and will start the section 'detail'.
+" can span multiple lines, but with no empty lines among themselves, an empty
+" line will start the 'detail' section, followed by the 'return' section.
 "
 " @param oldlines: the old lines
 " @return: the merged lines
@@ -238,6 +246,7 @@ endfunction "}}}
 "
 " @param new: the new lines
 " @param old: the old lines
+" @param ph:  the placeholder used (default ___)
 ""
 function! s:transfer_equal_lines(new, old, ph) abort
   "{{{1

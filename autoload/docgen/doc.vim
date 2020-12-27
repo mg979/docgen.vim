@@ -74,6 +74,9 @@ let s:Doc.ctrlChar                = { -> '@' }
 let s:Doc.placeholder              = { -> '___' }
 let s:Doc.leadingSpaceAfterComment = { -> 0 }
 
+""
+" The character used for the frame in boxed docstrings.
+""
 fun! s:Doc.frameChar()
   "{{{1
   return self.comment()[3]
@@ -279,6 +282,10 @@ endfun "}}}
 " Docstring formatting
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
+""
+" Function: s:Doc.format
+" Generate the docstring lines from the formatters of the different sections.
+""
 fun! s:Doc.format() abort
   "{{{1
   if self.is_storage

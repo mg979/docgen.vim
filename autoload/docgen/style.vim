@@ -121,7 +121,7 @@ fun! s:Style.apply() abort
 endfun "}}}
 
 ""
-" s:Style.echo: echo current style settings in the command line
+" Echo current style settings in the command line.
 ""
 fun! s:Style.echo() abort
   "{{{1
@@ -131,7 +131,7 @@ fun! s:Style.echo() abort
 endfun "}}}
 
 ""
-" s:Style.get_style: currently active style for filetype
+" Currently active style for filetype.
 ""
 fun! s:Style.get_style() abort
   "{{{1
@@ -144,7 +144,7 @@ fun! s:Style.get_style() abort
 endfun "}}}
 
 ""
-" s:Style.get_current: current index in the styles list
+" Current index in the styles list.
 ""
 fun! s:Style.get_current() abort
   "{{{1
@@ -153,7 +153,7 @@ fun! s:Style.get_current() abort
 endfun "}}}
 
 ""
-" s:Style.get_list: currently active styles list
+" Currently active styles list.
 ""
 fun! s:Style.get_list() abort
   "{{{1
