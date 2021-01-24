@@ -5,12 +5,18 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:gdscript = {
-      \ 'parsers': { -> ['^%sfunc\s%s%s%s'] },
+      \ 'parsers': { -> ['^%sfunc\s%s%s%s:'] },
       \ 'comment': { -> ['#', '#', '#', '-'] },
       \ 'custom': {},
       \}
 
 let s:gdscript.custom.header = {'default': ['Func %s: %p']}
+
+fun! s:gdscript.rtypeFmt() abort
+  let rtype = substitute(self.parsed.rtype, '\s*->\s*', '', '')
+  let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
+  return [self.ctrlChar() . 'return: ' . rtype . ' %p']
+endfun
 
 fun! s:gdscript.paramsNames() abort
   let params = substitute(self.parsed.params, '\s*\(:\|=\|:=\)[^,]\+', '', 'g')
