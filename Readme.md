@@ -31,6 +31,7 @@ Pros:
 * ruby
 * bash
 * vim
+* gdscript
 
 ## Usage
 
