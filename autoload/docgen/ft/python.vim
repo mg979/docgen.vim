@@ -38,7 +38,7 @@ fun! s:python.paramsNames() abort
     let params = substitute(params, '{[^{]\{-}}', '', 'g')
   endwhile
   let params = substitute(params, ':[^,]\+', '', 'g')
-  return split(params, ',')
+  return filter(split(params, ','), 'v:val !=# "self"')
 endfun
 
 ""
