@@ -23,6 +23,7 @@ Pros:
 ## Supported filetypes (as of now):
 
 * c
+* c#
 * cpp
 * java
 * go
@@ -32,6 +33,9 @@ Pros:
 * bash
 * vim
 * gdscript
+
+For some filetypes (especially c#, cpp and jave) support may not be optimal,
+please open an issue if you find some problem.
 
 ## Usage
 

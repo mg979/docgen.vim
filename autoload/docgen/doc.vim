@@ -439,6 +439,7 @@ endfun "}}}
 let s:vim    = docgen#ft#vim#get()
 let s:c      = docgen#ft#c#get('c')
 let s:cpp    = docgen#ft#c#get('cpp')
+let s:cs     = docgen#ft#cs#get()
 let s:python = docgen#ft#python#get()
 let s:lua    = docgen#ft#lua#get()
 let s:sh     = docgen#ft#sh#get()
