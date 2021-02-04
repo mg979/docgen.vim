@@ -75,6 +75,8 @@ let s:Doc.putBelow                 = { -> 0 }
 let s:Doc.ctrlChar                = { -> '@' }
 let s:Doc.placeholder              = { -> '___' }
 let s:Doc.leadingSpaceAfterComment = { -> 0 }
+let s:Doc.alignParameters          = { -> 1 }
+let s:Doc.drawFrame                = { -> 1 }
 
 ""
 " The character used for the frame in boxed docstrings.
@@ -300,7 +302,11 @@ fun! s:Doc.format() abort
     let self.lines.header = filter(self.headerLines(), { k,v -> v != '' })
   else
     " process params and return first, if absent the docstring could be reduced
-    let self.lines.params = s:align(self.paramsLines(), self.placeholder())
+    if self.alignParameters()
+      let self.lines.params = s:align(self.paramsLines(), self.placeholder())
+    else
+      let self.lines.params = self.paramsLines()
+    endif
     let self.lines.detail = self.detailLines()
     let self.lines.return = self.retLines()
     let self.lines.header = self.headerLines()

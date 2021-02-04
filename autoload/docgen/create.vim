@@ -111,7 +111,8 @@ fun! s:Doc.create_box(lines) abort
   "   - both? concatenate comment chars and line, with a space in between
   ""
   call map(a:lines, 'v:val == "" ? m : m == "" ? v:val : (m . " " . v:val)')
-  return [top] + extra + a:lines + extra + [btm] + post
+  return self.drawFrame() ? [top] + extra + a:lines + extra + [btm] + post
+        \                 : extra + a:lines + extra
 endfun "}}}
 
 
