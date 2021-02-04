@@ -237,7 +237,23 @@ function! s:Doc.preserve_oldlines(oldlines) abort
     let self.lines.detail = oldlines.detail
   endif
 
-  return self.lines.header + self.lines.params + self.lines.detail + self.lines.return
+  try
+    let lines = []
+    let params = self.lines.params + self.lines.detail
+
+    let sections = {
+          \ 'header': self.lines.header,
+          \ 'params': params,
+          \ 'rtype':  self.lines.return,
+          \}
+    for s in self.sections()
+      let lines += sections[s]
+    endfor
+    return lines
+  catch /.*/
+    return self.lines.header + self.lines.params +
+          \self.lines.detail + self.lines.return
+  endtry
 endfunction "}}}
 
 
