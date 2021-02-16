@@ -9,7 +9,7 @@ let s:am = [ 'public', 'private', 'protected', 'static', 'internal',
 let s:cs = {
       \ 'parsers':   { -> ['^%s%s%s%s\s*\n\?\s*{'] },
       \ 'typePat':   { -> '\s*\(\%(\%('. join(s:am, '\|') .'\)\s*\)*\)' },
-      \ 'rtypePat':  { -> '\s*\(\w\{-}\)' },
+      \ 'rtypePat':  { -> '\s*\([a-zA-Z0-9\[\]]\{-}\)' },
       \ 'namePat':   { -> '\s*\(\w\+\)' },
       \ 'paramsPat': { -> '\s*(\(\_.\{-}\))' },
       \ 'order':     { -> ['type', 'rtype', 'name', 'params'] },
