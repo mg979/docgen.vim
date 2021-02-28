@@ -25,7 +25,7 @@ let s:cs.custom.rtype.xml = ['<returns>', '%p', '</returns>', '']
 let s:cs.custom.params.xml = ['<param name="%s">%p</param>']
 
 fun! s:cs.comment()
-    return self.style.is_docstring ? ['///', '///', '///', '/'] : ['/**', ' *', '*/', '*']
+    return self.style.is_docstring ? ['///', '///', '///', '/'] : ['/**', ' *', ' */', '*']
 endfun
 
 fun! s:cs.drawFrame()
