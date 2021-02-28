@@ -34,7 +34,7 @@ fun! docgen#box(bang, count) abort
 
   call doc.reindent_box(lines)
   normal! `[
-  exe 'normal!' (doc.style.extraHeight + 1) . 'j'
+  exe 'normal! zv'. (doc.style.extraHeight + 1) . 'j'
   " could be a converted comment
   let @= = doc.was_comment ? '""' : '"A "'
 endfun "}}}
