@@ -9,7 +9,7 @@ let s:am = [ 'public', 'private', 'protected', 'static', 'internal',
 let s:cs = {
       \ 'parsers':   { -> ['^%s%s%s%s\s*\n\?\s*{'] },
       \ 'typePat':   { -> '\s*\(\%(\%('. join(s:am, '\|') .'\)\s*\)*\)' },
-      \ 'rtypePat':  { -> '\s*\([a-zA-Z0-9\[\]]\{-}\)' },
+      \ 'rtypePat':  { -> '\s*\([a-zA-Z0-9\[\]]\{-}\%(<[^(]*>\)\?\)' },
       \ 'namePat':   { -> '\s*\(\w\+\)' },
       \ 'paramsPat': { -> '\s*(\(\_.\{-}\))' },
       \ 'order':     { -> ['type', 'rtype', 'name', 'params'] },
@@ -20,8 +20,8 @@ let s:cs = {
 let s:cs.alignParameters = { -> 0 }
 let s:cs.sections = { -> ['header', 'rtype', 'params'] }
 
-let s:cs.custom.header.xml = ['<summary>', '%p', '</summary>', '']
-let s:cs.custom.rtype.xml = ['<returns>', '%p', '</returns>', '']
+let s:cs.custom.header.xml = ['<summary>', '%p', '</summary>']
+let s:cs.custom.rtype.xml = ['<returns>', '%p', '</returns>']
 let s:cs.custom.params.xml = ['<param name="%s">%p</param>']
 
 fun! s:cs.comment()
