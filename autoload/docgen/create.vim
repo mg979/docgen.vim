@@ -204,6 +204,9 @@ function! s:Doc.preserve_oldlines(oldlines) abort
   " {{{1
   if self.is_storage
     return self.lines.header + a:oldlines[1:]
+  elseif empty(a:oldlines)
+    return self.lines.header + self.lines.params +
+          \self.lines.detail + self.lines.return
   endif
 
   let c = self.ctrlChar()
