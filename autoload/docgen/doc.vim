@@ -446,6 +446,7 @@ let s:sh     = docgen#ft#sh#get()
 let s:java   = docgen#ft#java#get()
 let s:ruby   = docgen#ft#ruby#get()
 let s:go     = docgen#ft#go#get()
+let s:vlang  = docgen#ft#go#get()
 let s:gdscript = docgen#ft#gdscript#get()
 
 

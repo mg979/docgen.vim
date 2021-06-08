@@ -5,14 +5,14 @@ endfun "}}}
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:go = {
-      \ 'parsers':   { -> ['^func\s\+%s%s%s%s\s*{'] },
+      \ 'parsers':   { -> ['^fu\?nc\?\s\+%s%s%s%s\s*{'] },
       \ 'namePat':   { -> '\s*\%((.\{-})\s*\)\?\([^( \t]\+\)' },
       \ 'paramsPat': { -> '\s*(\(.\{-}\))' },
       \ 'rtypePat':  { -> '\s*\(.*\)\?' },
       \}
 
 fun! s:go.headerFmt()
-  let m = matchstr(getline(self.startLn), '^\s*func\s*(.\{-}\s\+\*\?\zs.\{-}\ze)')
+  let m = matchstr(getline(self.startLn), '^\s*fu\?nc\?\s*(.\{-}\s\+\*\?\zs.\{-}\ze)')
   let f = m == '' ? 'Function' : '[' . m . '] Method'
   let s = m == '' ? '' : m . '.'
   return {
