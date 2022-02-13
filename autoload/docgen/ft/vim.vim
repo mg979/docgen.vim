@@ -6,12 +6,12 @@ endfun "}}}
 
 let s:vim = {
       \ 'parsers': { -> ['^fu\k*!\?\s%s%s%s%s'] },
-      \ 'comment': { -> ['""', '"', '""', '='] },
+      \ 'comment': { -> search('^vim9script', 'n') ? ['#', '#', '#', '='] : ['""', '"', '""', '='] },
       \ 'fmt': {'rtype': {'default': ['Returns: %p'], 'boxed': ['Returns: %p']}}
       \}
 
 fun! s:vim.frameChar() abort
-  return self.style.is_docstring ? '=' : '"'
+  return self.style.is_docstring || search('^vim9script', 'n') ? '-' : '"'
 endfun
 
 fun! s:vim.retLines() abort
