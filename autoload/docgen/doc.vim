@@ -6,10 +6,6 @@ fun! docgen#doc#new(is_docstring) abort
   "{{{1
   let doc = extend(deepcopy(s:Doc), docgen#create#box())
 
-  " b:docgen can add customizations or support for unsupported filetypes
-  if exists('b:docgen')
-    let s:{&filetype} = extend(s:FT(), b:docgen)
-  endif
   call extend(doc, s:FT())
 
   let doc.style = docgen#style#get()
@@ -72,7 +68,7 @@ let s:Doc.storageLines = { -> [] }
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
 let s:Doc.putBelow                 = { -> 0 }
-let s:Doc.ctrlChar                = { -> '@' }
+let s:Doc.ctrlChar                 = { -> '@' }
 let s:Doc.placeholder              = { -> '___' }
 let s:Doc.leadingSpaceAfterComment = { -> 0 }
 let s:Doc.alignParameters          = { -> 1 }
@@ -458,8 +454,8 @@ let s:gdscript = docgen#ft#gdscript#get()
 " The filetype-specific settings, if available.
 ""
 fun! docgen#doc#ft()
-  "{{{1
-  return get(s:, &filetype, {})
+  " b:docgen can add customizations or support for unsupported filetypes {{{1
+  return extend(get(s:, &filetype, {}), get(b:, 'docgen', {}))
 endfun
 
 let s:FT = function('docgen#doc#ft')
