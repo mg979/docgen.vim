@@ -1,5 +1,5 @@
 fun! docgen#ft#python#get() "{{{1
-    return s:python
+  return s:python
 endfun "}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -13,9 +13,13 @@ let s:python = {
       \}
 
 fun! s:python.rtypeFmt() abort
-  let rtype = substitute(self.parsed.rtype, '\s*->\s*', '', '')
-  let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
-  return [self.ctrlChar() . 'return: ' . rtype . ' %p']
+  if self.hintReturnType()
+    let rtype = substitute(self.parsed.rtype, '\s*->\s*', '', '')
+    let rtype = empty(rtype) ? '' : ' [' . trim(rtype) . ']'
+  else
+    let rtype = ''
+  endif
+  return [self.ctrlChar() . 'return' . rtype . ': %p']
 endfun
 
 fun! s:python.comment() abort
@@ -54,16 +58,16 @@ fun! s:python.remove_previous(start) abort
   " {{{1
   let lines = []
   if !search('^\s*"""', 'n', a:start + 1)
-      return []
+    return []
   endif
   +
   let begin = line('.')
   if getline('.') =~ '^\s*""".*"""$'
-      let end = begin
-      let lines = [substitute(getline('.'), '"""\s*', '', 'g')]
+    let end = begin
+    let lines = [substitute(getline('.'), '"""\s*', '', 'g')]
   else
-      let end = search('^\s*"""', 'n')
-      let lines = getline(begin, end)
+    let end = search('^\s*"""', 'n')
+    let lines = getline(begin, end)
   endif
 
   let next = self.below() ? 1 : -1
@@ -75,4 +79,4 @@ endfun "}}}
 
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"vim: ft=vim et sw=4 fd=marker
+" vim: ft=vim et ts=2 sw=2 sts=2 fdm=marker

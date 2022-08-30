@@ -37,4 +37,4 @@ fun! s:go.paramsNames() abort
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"vim: ft=vim et sw=4 fd=marker
+" vim: ft=vim et ts=2 sw=2 sts=2 fdm=marker
