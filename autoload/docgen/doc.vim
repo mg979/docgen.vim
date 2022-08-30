@@ -74,6 +74,9 @@ let s:Doc.leadingSpaceAfterComment = { -> 0 }
 let s:Doc.alignParameters          = { -> 1 }
 let s:Doc.drawFrame                = { -> 1 }
 
+let s:Doc.hintParamType            = { -> 0 }
+let s:Doc.hintReturnType           = { -> 0 }
+
 ""
 " The character used for the frame in boxed docstrings.
 ""

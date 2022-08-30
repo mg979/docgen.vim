@@ -1,5 +1,5 @@
 fun! docgen#ft#gdscript#get() "{{{1
-    return s:gdscript
+  return s:gdscript
 endfun "}}}
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
@@ -7,26 +7,39 @@ endfun "}}}
 let s:gdscript = {
       \ 'parsers': { -> ['^%sfunc\s%s%s%s:'] },
       \ 'comment': { -> ['#', '#', '#', '-'] },
-      \ 'custom': {},
+      \ 'custom': { 'header': ['%p'] },
+      \ 'alignParameters': { -> v:false }
       \}
 
-let s:gdscript.custom.header = {'default': ['Func %s: %p']}
+fun! s:gdscript.drawFrame()
+  return !self.style.is_docstring
+endfun
 
 fun! s:gdscript.rtypeFmt() abort
-  let rtype = substitute(self.parsed.rtype, '\s*->\s*', '', '')
-  let rtype = empty(rtype) ? '' : '[' . trim(rtype) . ']'
-  return [self.ctrlChar() . 'return: ' . rtype . ' %p']
+  if self.hintReturnType()
+    let rtype = substitute(self.parsed.rtype, '\s*->\s*', '', '')
+    let rtype = empty(rtype) ? '' : ' [' . trim(rtype) . ']'
+  else
+    let rtype = ''
+  endif
+  return [self.ctrlChar() . 'return' . rtype . ': %p']
 endfun
 
 fun! s:gdscript.paramsNames() abort
-  let params = substitute(self.parsed.params, '\s*\(:\|=\|:=\)[^,]\+', '', 'g')
-  return split(params, ',')
+  let params = []
+  for p in map(split(self.parsed.params, ','), 'trim(v:val)')
+    let pstr = matchstr(p, '^\w\+')
+    if self.hintParamType() && match(p, ': \w\+') >= 0
+      let pstr .= ' [' .. matchstr(p, ': \zs\w\+') .. ']'
+    endif
+    call add(params, pstr)
+  endfor
+  return params
 endfun
 
 fun! s:gdscript.retLines() abort
-  return search('return\s*[[:alnum:]_([{''"]', 'nW', search('^end', 'nW'))
-        \ ? self.templates.rtype : []
+  return match(self.parsed.rtype, 'void') == -1 ? self.templates.rtype : []
 endfun
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-"vim: ft=vim et sw=4 fd=marker
+" vim: ft=vim et ts=2 sw=2 fdm=marker
