@@ -254,9 +254,8 @@ endfun "}}}
 ""
 fun! s:Doc.ordered_patterns() abort
   "{{{1
-  let s = self
   let o = self.order()
-  return map(o, { k,v -> eval('s.'.o[k].'Pat()') })
+  return map(o, { k,v -> eval('self.'.o[k].'Pat()') })
 endfun "}}}
 
 
@@ -271,7 +270,7 @@ fun! s:Doc.make_templates() abort
   let ph = self.placeholder()
   for sect in self.sections()
     let default = eval('self.'.sect.'Fmt()')
-    let fmt = get(self.custom, sect, default)
+    let fmt = get(deepcopy(self.custom), sect, default)
     let self.templates[sect] = type(fmt) == v:t_dict ? get(fmt, style, default) : fmt
     call map(self.templates[sect], 'substitute(v:val, "%p", ph, "")')
   endfor
