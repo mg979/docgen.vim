@@ -14,7 +14,7 @@ Cons:
 
 Pros:
 
-* built-in support for c/cpp
+* no external dependencies
 * different commenting styles
 * possible to update previous docstring
 * command to create comment boxes, and to boxify current comments
@@ -33,8 +33,9 @@ Pros:
 * bash
 * vim
 * gdscript
+* vb (Visual Basic)
 
-For some filetypes (especially c#, cpp and jave) support may not be optimal,
+For some filetypes (especially c#, cpp and java) support may not be optimal,
 please open an issue if you find some problem.
 
 ## Usage

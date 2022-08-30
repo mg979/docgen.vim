@@ -1,5 +1,5 @@
 " VARIABLES {{{1
-let s:supported = ['vim', 'lua', 'python', 'sh', 'java', 'ruby',
+let s:supported = ['vim', 'lua', 'python', 'sh', 'java', 'ruby', 'vb',
       \            'go', 'c', 'cpp', 'cs', 'gdscript']
 " }}}
 
